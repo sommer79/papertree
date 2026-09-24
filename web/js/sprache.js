@@ -20,6 +20,13 @@ export const RUECKFALL = 'en';
 // das einstellt, sähe sonst weiter das Datum seiner Anzeigesprache.
 export const ISO = 'iso-8601';
 
+// Die mittlere Form, von Hand zusammengesetzt statt über dateStyle: 'medium'.
+// Die beiden meinen nicht dasselbe. Intl schreibt "medium" in mehreren
+// Sprachen rein numerisch – auf Deutsch 24.09.2026 –, gemeint ist aber die
+// Form mit gekürztem Monatsnamen, die auch Paperless unter "Mittel" zeigt:
+// 24. Sept. 2026, 24 Sept 2026, 24 set 2026.
+const MITTELFORM = { day: 'numeric', month: 'short', year: 'numeric' };
+
 let katalog = {};
 let englisch = {};
 let aktuelleSprache = RUECKFALL;
@@ -88,7 +95,7 @@ export async function spracheEinrichten(benutzer) {
   // stünde in einer deutschen Oberfläche plötzlich 1,660 statt 1'660.
   const zahlSprache = datumsSprache === ISO ? aktuelleSprache : datumsSprache;
   datumsformat = datumsSprache === ISO
-    ? null : new Intl.DateTimeFormat(datumsSprache, { dateStyle: 'medium' });
+    ? null : new Intl.DateTimeFormat(datumsSprache, MITTELFORM);
   zahlformat = new Intl.NumberFormat(zahlSprache);
   pluralregel = new Intl.PluralRules(aktuelleSprache);
 
@@ -148,12 +155,13 @@ function isoText(zeitpunkt) {
 }
 
 /**
- * Ein Datum in der mittleren Form: "24. Sept. 2026", "Sep 24, 2026" – oder
+ * Ein Datum in der mittleren Form: "24. Sept. 2026", "24 Sept 2026" – oder
  * "2026-09-24", wenn in Paperless ISO 8601 eingestellt ist.
  *
- * Immer mittel, nie ausgeschrieben – in einer Liste mit dreissig Zeilen zählt
- * die gleiche Breite mehr als der volle Monatsname, und die kurze Form
- * schreibt das Jahr zweistellig, was in einer Ablage niemand will.
+ * Immer mittel, nie ausgeschrieben und nie rein numerisch: der gekürzte
+ * Monatsname macht den Tag vom Monat unterscheidbar, ohne dass eine Spalte
+ * mit dreissig Zeilen ausfranst. Die kurze Form schriebe das Jahr zweistellig,
+ * was in einer Ablage niemand will.
  *
  * Ein reiner Datumstext wird von Hand zerlegt statt durch Date geschickt:
  * "2026-01-23" wäre dort UTC-Mitternacht und fiele westlich von Greenwich auf
