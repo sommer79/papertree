@@ -17,10 +17,22 @@ import re
 SPRACHEN = ("de", "en", "fr", "it", "es")
 
 # Wo Paperless die beiden Werte ablegt. Die Sprache steht zuoberst, weil
-# Paperless sie serverseitig selbst braucht; die Datumssprache liegt im
-# Schlüsselraum der Oberfläche.
+# Paperless sie serverseitig selbst braucht.
 SCHLUESSEL_SPRACHE = "language"
-SCHLUESSEL_DATUM = "general-settings:date-display:date-locale"
+
+# Die Datumssprache liegt verschachtelt: settings.date_display.date_locale.
+# Im Browser heisst dieselbe Einstellung "general-settings:date-display:
+# date-locale" – das ist der Name im Frontend, beim Speichern baut Paperless
+# daraus die verschachtelte Form. Nachgeschaut wird an beiden Orten, damit es
+# auch mit einer Fassung stimmt, die flach ablegt.
+SCHLUESSEL_DATUM = ("date_display", "date_locale")
+SCHLUESSEL_DATUM_FLACH = "general-settings:date-display:date-locale"
+
+# Neben den Sprachen kennt Paperless einen Sonderwert: ISO 8601. Das ist
+# keine Sprache, sondern eine Schreibweise – 2026-09-24, überall gleich.
+# Intl nimmt "iso-8601" als wohlgeformtes Sprachkürzel an und übergeht es
+# dann stillschweigend, darum muss es hier von Hand durchgereicht werden.
+ISO = "iso-8601"
 
 # Ein Sprachkürzel, wie Intl es versteht: "de", "de-CH", "pt-BR".
 _LOCALE = re.compile(r"^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$")
@@ -42,9 +54,21 @@ def datumssprache_waehlen(wert: str | None) -> str:
     Anders als bei der Oberfläche gibt es hier keine Liste: das Datum
     formatiert der Browser, und der kennt jede Sprache. Geprüft wird nur die
     Form, damit aus den Einstellungen nichts Unbrauchbares weitergereicht wird.
+    "iso-8601" kommt durch, obwohl es keine Sprache ist.
     """
     kurz = (wert or "").strip().replace("_", "-")
+    if kurz.lower() == ISO:
+        return ISO
     return kurz if _LOCALE.match(kurz) else ""
+
+
+def _datumswert(werte: dict) -> str:
+    """Die Datumseinstellung, verschachtelt oder flach."""
+    aussen, innen = SCHLUESSEL_DATUM
+    verschachtelt = werte.get(aussen)
+    if isinstance(verschachtelt, dict) and verschachtelt.get(innen):
+        return str(verschachtelt[innen])
+    return str(werte.get(SCHLUESSEL_DATUM_FLACH) or "")
 
 
 def aus_einstellungen(gewaehlt: dict | None) -> dict:
@@ -58,6 +82,6 @@ def aus_einstellungen(gewaehlt: dict | None) -> dict:
     roh_sprache = werte.get(SCHLUESSEL_SPRACHE) or ""
     return {
         "sprache": sprache_waehlen(roh_sprache),
-        "datumssprache": (datumssprache_waehlen(werte.get(SCHLUESSEL_DATUM) or "")
+        "datumssprache": (datumssprache_waehlen(_datumswert(werte))
                           or datumssprache_waehlen(roh_sprache)),
     }

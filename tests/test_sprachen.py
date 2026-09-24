@@ -171,6 +171,39 @@ class PaperlessSpracheTest(unittest.TestCase):
         from app import sprache as sprachmodul
         self.assertEqual("de-CH", sprachmodul.datumssprache_waehlen("de-CH"))
         self.assertEqual("pt-BR", sprachmodul.datumssprache_waehlen("pt-BR"))
+
+    def test_iso_kommt_durch(self):
+        # ISO 8601 ist keine Sprache, sondern eine Schreibweise. Intl nimmt
+        # "iso-8601" als wohlgeformtes Kürzel an und übergeht es dann – ohne
+        # diesen Weg sähe man weiter das Datum der Anzeigesprache.
+        from app import sprache as sprachmodul
+        self.assertEqual("iso-8601", sprachmodul.datumssprache_waehlen("iso-8601"))
+        self.assertEqual("iso-8601", sprachmodul.datumssprache_waehlen("ISO-8601"))
+
+    def test_datumssprache_liegt_verschachtelt(self):
+        # So antwortet Paperless 3.1.3 wirklich: date_locale steckt in
+        # date_display, nicht unter dem flachen Namen aus dem Frontend.
+        from app import sprache as sprachmodul
+        gelesen = sprachmodul.aus_einstellungen({
+            "language": "de-de",
+            "date_display": {"date_format": "mediumDate", "date_locale": "iso-8601"},
+        })
+        self.assertEqual({"sprache": "de", "datumssprache": "iso-8601"}, gelesen)
+
+    def test_datumssprache_auch_flach(self):
+        from app import sprache as sprachmodul
+        gelesen = sprachmodul.aus_einstellungen({
+            "language": "de-de",
+            "general-settings:date-display:date-locale": "de-CH",
+        })
+        self.assertEqual({"sprache": "de", "datumssprache": "de-CH"}, gelesen)
+
+    def test_ohne_datumsangabe_gilt_die_anzeigesprache(self):
+        from app import sprache as sprachmodul
+        self.assertEqual({"sprache": "fr", "datumssprache": "fr-ch"},
+                         sprachmodul.aus_einstellungen({"language": "fr-ch"}))
+        self.assertEqual({"sprache": "", "datumssprache": ""},
+                         sprachmodul.aus_einstellungen({}))
         self.assertEqual("", sprachmodul.datumssprache_waehlen("kein sprachkürzel"))
         self.assertEqual("", sprachmodul.datumssprache_waehlen("../../etc/passwd"))
 

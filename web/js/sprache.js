@@ -14,6 +14,12 @@ import { BASIS } from './api.js';
 export const SPRACHEN = ['de', 'en', 'fr', 'it', 'es'];
 export const RUECKFALL = 'en';
 
+// Paperless kennt fürs Datum neben den Sprachen einen Sonderwert: ISO 8601,
+// also 2026-09-24, in jeder Sprache gleich. Intl nimmt "iso-8601" als
+// wohlgeformtes Sprachkürzel an und übergeht es dann stillschweigend – wer
+// das einstellt, sähe sonst weiter das Datum seiner Anzeigesprache.
+export const ISO = 'iso-8601';
+
 let katalog = {};
 let englisch = {};
 let aktuelleSprache = RUECKFALL;
@@ -48,8 +54,9 @@ export function spracheBestimmen(ausPaperless) {
 
 /** Prüft, ob der Browser dieses Sprachkürzel fürs Datum kennt. */
 function datumsspracheBestimmen(gewuenscht, ersatz) {
+  if (gewuenscht === ISO) return ISO;
   for (const kandidat of [gewuenscht, ersatz]) {
-    if (!kandidat) continue;
+    if (!kandidat || kandidat === ISO) continue;
     try {
       // Wirft bei unbrauchbarer Angabe – dann gilt der nächste Kandidat.
       new Intl.DateTimeFormat(kandidat);
@@ -77,8 +84,12 @@ export async function spracheEinrichten(benutzer) {
   katalog = gewaehlt || {};
   englisch = ersatz || katalog;
 
-  datumsformat = new Intl.DateTimeFormat(datumsSprache, { dateStyle: 'medium' });
-  zahlformat = new Intl.NumberFormat(datumsSprache);
+  // ISO ist keine Sprache: Zahlen schreibt dann die Anzeigesprache, sonst
+  // stünde in einer deutschen Oberfläche plötzlich 1,660 statt 1'660.
+  const zahlSprache = datumsSprache === ISO ? aktuelleSprache : datumsSprache;
+  datumsformat = datumsSprache === ISO
+    ? null : new Intl.DateTimeFormat(datumsSprache, { dateStyle: 'medium' });
+  zahlformat = new Intl.NumberFormat(zahlSprache);
   pluralregel = new Intl.PluralRules(aktuelleSprache);
 
   // Damit der Browser richtig trennt und vorliest.
@@ -130,8 +141,15 @@ export function tn(schluessel, anzahl, werte) {
 export const kenntText = (schluessel) =>
   katalog[schluessel] !== undefined || englisch[schluessel] !== undefined;
 
+function isoText(zeitpunkt) {
+  const zwei = (n) => String(n).padStart(2, '0');
+  return zeitpunkt.getFullYear() + '-' + zwei(zeitpunkt.getMonth() + 1)
+    + '-' + zwei(zeitpunkt.getDate());
+}
+
 /**
- * Ein Datum in der mittleren Form: "24. Sept. 2026", "Sep 24, 2026".
+ * Ein Datum in der mittleren Form: "24. Sept. 2026", "Sep 24, 2026" – oder
+ * "2026-09-24", wenn in Paperless ISO 8601 eingestellt ist.
  *
  * Immer mittel, nie ausgeschrieben – in einer Liste mit dreissig Zeilen zählt
  * die gleiche Breite mehr als der volle Monatsname, und die kurze Form
@@ -149,8 +167,8 @@ export function datum(wert) {
     ? new Date(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3]))
     : new Date(text);
   if (isNaN(zeitpunkt)) return text.slice(0, 10);
-  if (!datumsformat) return text.slice(0, 10);
-  return datumsformat.format(zeitpunkt);
+  if (datumsSprache === ISO) return isoText(zeitpunkt);
+  return datumsformat ? datumsformat.format(zeitpunkt) : isoText(zeitpunkt);
 }
 
 /** Eine Zahl mit den Trennzeichen der eingestellten Sprache. */
