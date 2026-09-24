@@ -136,7 +136,8 @@ Nur nachsehen, ohne irgendetwas zu ändern:
 Den nginx-Schritt kann man auch einzeln nachholen:
 
 ```bash
-sudo python3 deploy/nginx_einfuegen.py \n     --host paperless.example.org --pfad papertree --port 8080 --neuladen
+sudo python3 deploy/nginx_einfuegen.py \
+     --host paperless.example.org --pfad papertree --port 8080 --neuladen
 ```
 
 ### Einstellungen
