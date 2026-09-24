@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PaperTree</title>
+<link rel="stylesheet" href="stil.css">
+</head>
+<body>
+
+<header class="kopf">
+  <button class="knopf nur-schmal" id="baum-auf" aria-label="Ordner anzeigen">☰</button>
+  <a class="marke" href="#/">PaperTree</a>
+  <form class="suchform" id="suchform" role="search">
+    <input type="search" id="suchfeld" placeholder="Volltextsuche im ganzen Bestand" autocomplete="off">
+    <button class="knopf haupt suchknopf" type="submit">Suchen</button>
+  </form>
+  <span class="kopf-rest">
+    <button class="knopf nur-suche" id="suche-auf" aria-label="Suche öffnen" aria-expanded="false">
+      <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor"
+           stroke-width="1.6" stroke-linecap="round" aria-hidden="true">
+        <circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/>
+      </svg>
+    </button>
+    <a class="knopf" id="einstellungen-link" href="#/einstellungen" hidden
+       title="Einstellungen für Tags und Korrespondenten">Einstellungen</a>
+    <a class="knopf" id="paperless-link" href="#" target="_blank" rel="noopener">Paperless</a>
+    <span class="benutzer" id="benutzer"></span>
+  </span>
+</header>
+
+<div class="rahmen">
+
+  <aside class="seite" id="seite">
+    <div class="seite-kopf">
+      <strong>Ordner</strong>
+      <button class="knopf klein" id="ordner-neu" title="Ordner auf oberster Ebene anlegen">+ Ordner</button>
+    </div>
+    <nav class="baum" id="baum" aria-label="Ordnerbaum"></nav>
+    <div class="seite-fuss">
+      <a href="#/dashboard">Dashboard</a>
+      <span class="fuss-rechts">
+        <button class="knopf klein" id="baum-export" title="Baum als JSON sichern">Export</button>
+        <button class="knopf klein" id="baum-import" title="Gesicherten Baum einlesen">Import</button>
+        <input type="file" id="import-datei" accept="application/json,.json" hidden>
+      </span>
+    </div>
+  </aside>
+
+  <main class="inhalt" id="inhalt">
+    <div class="laedt" id="start">PaperTree wird geladen …</div>
+  </main>
+
+</div>
+
+<!-- Editor für einen Ordner -->
+<dialog class="dialog" id="editor">
+  <form id="editor-form" method="dialog">
+    <header class="dialog-kopf">
+      <h2 id="editor-titel">Ordner</h2>
+      <!-- type="button": als Submit-Knopf löste er nur das Absenden des
+           Formulars aus, und das wird unterbunden – der Knopf tat dann
+           nichts. Geschlossen wird jetzt über den Handler in editor.js. -->
+      <button type="button" class="knopf klein schliessknopf" id="e-schliessen"
+              aria-label="Schliessen" title="Schliessen">
+        <svg viewBox="0 0 16 16" width="15" height="15" fill="none"
+             stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+             aria-hidden="true">
+          <path d="M4 4 12 12M12 4 4 12"/>
+        </svg>
+      </button>
+    </header>
+
+    <div class="dialog-koerper">
+
+      <div class="zeile">
+        <div class="feld">
+          <span>Name</span>
+          <div class="namenszeile">
+            <button type="button" class="knopf symbolknopf" id="e-symbol"
+                    title="Symbol auswählen" aria-label="Symbol auswählen"></button>
+            <input type="text" id="e-name" required maxlength="200">
+          </div>
+        </div>
+        <label class="feld">
+          <span>Übergeordneter Ordner</span>
+          <select id="e-eltern"></select>
+        </label>
+      </div>
+
+      <fieldset class="schalter">
+        <legend>Was zeigt dieser Ordner?</legend>
+        <label class="haken">
+          <input type="checkbox" id="e-eigener">
+          <span><strong>Eigener Filter</strong> – der Ordner zeigt eigene Dokumente</span>
+        </label>
+        <label class="haken">
+          <input type="checkbox" id="e-kinder">
+          <span><strong>Unterordner einbeziehen</strong> – zusätzlich die Dokumente der Unterordner</span>
+        </label>
+        <label class="haken unter" id="e-tief-zeile">
+          <input type="checkbox" id="e-tief" checked>
+          <span>ganzer Teilbaum (aus: nur die direkte Ebene)</span>
+        </label>
+        <p class="hinweis" id="e-modus"></p>
+      </fieldset>
+
+      <fieldset class="schalter">
+        <legend>Unterordner automatisch</legend>
+        <label class="feld">
+          <span>Aufspannen nach</span>
+          <select id="e-gruppieren"></select>
+        </label>
+        <p class="hinweis">
+          Erzeugt die Unterordner aus den vorhandenen Werten, statt sie von Hand
+          anzulegen. Kommt in Paperless ein Wert dazu, erscheint der Unterordner
+          von selbst. Von Hand angelegte Unterordner bleiben daneben bestehen.
+        </p>
+      </fieldset>
+
+      <fieldset class="filterteil" id="e-filterteil">
+        <legend>Filter</legend>
+
+        <div class="geerbt" id="e-geerbt"></div>
+        <label class="haken">
+          <input type="checkbox" id="e-eigenstaendig">
+          <span>Eigenständig – erbt den Filter der übergeordneten Ordner nicht</span>
+        </label>
+
+        <div class="kriterien" id="e-kriterien"></div>
+        <div class="kriterium-neu">
+          <select id="e-neues-kriterium">
+            <option value="">Kriterium hinzufügen …</option>
+          </select>
+        </div>
+
+        <details class="linkteil">
+          <summary>Aus einem Paperless-Link übernehmen</summary>
+          <p class="hinweis">Suche in Paperless zusammenstellen, den vollständigen Link
+             aus der Adresszeile kopieren und hier einfügen.</p>
+          <div class="linkzeile">
+            <input type="url" id="e-link" placeholder="https://…/documents?tags__id__all=5,7">
+            <button type="button" class="knopf" id="e-link-holen">Übernehmen</button>
+          </div>
+          <p class="hinweis" id="e-link-meldung"></p>
+        </details>
+
+        <p class="treffer" id="e-treffer"></p>
+      </fieldset>
+
+      <fieldset class="anzeige">
+        <legend>Anzeige</legend>
+        <div class="zeile">
+          <label class="feld">
+            <span>Sortierung</span>
+            <select id="e-sortierung"></select>
+          </label>
+          <label class="feld">
+            <span>Einträge pro Seite</span>
+            <input type="number" id="e-seitengroesse" min="5" max="200" step="5">
+          </label>
+        </div>
+        <label class="haken">
+          <input type="checkbox" id="e-dashboard">
+          <span>Auf dem PaperTree-Dashboard anzeigen</span>
+        </label>
+      </fieldset>
+
+    </div>
+
+    <footer class="dialog-fuss">
+      <button type="button" class="knopf gefahr" id="e-loeschen">Löschen</button>
+      <span class="luecke"></span>
+      <button type="button" class="knopf" id="e-abbrechen">Abbrechen</button>
+      <button type="button" class="knopf haupt" id="e-speichern">Speichern</button>
+    </footer>
+  </form>
+</dialog>
+
+<!-- Popper für die Tooltips: lokal mitgeliefert, damit die Oberfläche ohne
+     Verbindung nach draussen auskommt. @popperjs/core 2.11.8, MIT. -->
+<script src="vendor/popper.min.js"></script>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

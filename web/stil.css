@@ -1,0 +1,851 @@
+/* PaperTree – ein Stil, keine Abhängigkeiten. Schmal zuerst (F9.1). */
+
+:root {
+  --grund: #f6f7f9;
+  --flaeche: #ffffff;
+  --rand: #dfe3e8;
+  --text: #1c2430;
+  --leise: #667085;
+  --akzent: #2f6bd8;
+  --akzent-leicht: #e8effc;
+  --gefahr: #c0392b;
+  --schatten: 0 1px 2px rgba(16, 24, 40, .06), 0 4px 12px rgba(16, 24, 40, .06);
+  --rund: 5px;
+  --kopf-hoehe: 52px;
+  /* Polsterung des Inhaltsbereichs. Als Variable, weil drei Regeln
+     aufeinander passen müssen: die Polsterung selbst, der negative Rand der
+     haftenden Titelzeile und deren Haftpunkt. */
+  --inhalt-polster: 16px;
+  /* Die Schrift sitzt in ihrer Zeilenbox nicht symmetrisch: über den
+     Grossbuchstaben bleibt weniger Luft als darunter. Dieser Versatz rückt
+     Text und Symbol im Baum auf die optische Mitte. Er hängt an der
+     Zeilenhöhe und ist darum je Breite ein anderer – gemessen über die
+     Schriftmetrik, nicht geschätzt. */
+  --zeile-versatz: -1px;
+}
+@media (max-width: 900px) {
+  :root { --inhalt-polster: 12px; --zeile-versatz: 0px; }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --grund: #14181e;
+    --flaeche: #1b2129;
+    --rand: #2c343f;
+    --text: #e6e9ee;
+    --leise: #93a0b0;
+    --akzent: #6fa1f5;
+    --akzent-leicht: #1e2a3d;
+    --gefahr: #e06c5c;
+    --schatten: 0 1px 2px rgba(0, 0, 0, .4);
+  }
+}
+
+* { box-sizing: border-box; }
+
+/* Die Seite ist ein Fenster, keine Rolle Papier: Kopf und Seitenleiste
+   stehen fest, gescrollt wird nur im Inhaltsbereich. Darum bekommen html
+   und body die Fensterhöhe und geben sie nach innen weiter. Das ist
+   verlässlicher als position: sticky – das braucht einen scrollenden
+   Vorfahren und hatte bei kurzen Seiten gar nichts, woran es haften
+   konnte. */
+html { height: 100%; }
+
+body {
+  margin: 0;
+  height: 100%;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  background: var(--grund);
+  color: var(--text);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+a { color: var(--akzent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* --- Kopf ---------------------------------------------------------------- */
+/* Kein sticky mehr nötig: als erstes Flex-Kind von body steht der Kopf
+   ohnehin fest, weil unter ihm nichts mehr wegscrollt. position: relative
+   dient nur als Bezugspunkt für das aufklappende Suchfeld am Handy. */
+.kopf {
+  position: relative; z-index: 20; flex: 0 0 auto;
+  display: flex; align-items: center; gap: 12px;
+  height: var(--kopf-hoehe); padding: 0 12px;
+  background: var(--flaeche); border-bottom: 1px solid var(--rand);
+}
+.marke { font-weight: 650; letter-spacing: .2px; color: var(--text); }
+.marke:hover { text-decoration: none; }
+.suchform { flex: 1; min-width: 0; display: flex; gap: 8px; }
+.suchform input {
+  flex: 1; min-width: 0; padding: 7px 11px; font: inherit;
+  border: 1px solid var(--rand); border-radius: var(--rund);
+  background: var(--grund); color: var(--text);
+}
+/* Mit .knopf davor, damit die Regel unabhängig von der Reihenfolge in dieser
+   Datei gilt: .knopf setzt selbst display und steht weiter unten. */
+.knopf.suchknopf { display: none; }
+/* margin-left: auto, damit der rechte Teil auch dann aussen sitzt, wenn das
+   Suchfeld aufgeklappt ist: dort ist es position:absolute und schiebt mit
+   seinem flex:1 nichts mehr. */
+.kopf-rest { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+.benutzer { color: var(--leise); font-size: 13px; white-space: nowrap; }
+.knopf.nur-suche { display: none; }
+
+/* Auf schmalen Schirmen nimmt das Suchfeld den halben Kopf ein. Dort steht
+   stattdessen eine Lupe; das Feld klappt auf Knopfdruck unter dem Kopf auf. */
+@media (max-width: 720px) {
+  .benutzer { display: none; }
+  #paperless-link { display: none; }
+  .knopf.nur-suche { display: inline-flex; }
+
+  .suchform {
+    position: absolute; left: 0; right: 0; top: 100%;
+    display: none; padding: 9px 12px; margin: 0;
+    background: var(--flaeche); border-bottom: 1px solid var(--rand);
+    box-shadow: var(--schatten);
+  }
+  .kopf.suche-offen .suchform { display: flex; }
+  .knopf.suchknopf { display: inline-flex; white-space: nowrap; }
+}
+
+/* --- Knöpfe -------------------------------------------------------------- */
+.knopf {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 11px; font: inherit; line-height: 1.2;
+  border: 1px solid var(--rand); border-radius: var(--rund);
+  background: var(--flaeche); color: var(--text); cursor: pointer;
+}
+.knopf:hover { background: var(--akzent-leicht); text-decoration: none; }
+.knopf.klein { padding: 4px 8px; font-size: 13px; }
+.knopf.haupt { background: var(--akzent); border-color: var(--akzent); color: #fff; }
+.knopf.haupt:hover { filter: brightness(1.08); }
+.knopf.gefahr { color: var(--gefahr); border-color: var(--rand); }
+.knopf:disabled { opacity: .5; cursor: default; }
+.knopf.nur-schmal { display: none; }
+@media (max-width: 900px) { .knopf.nur-schmal { display: inline-flex; } }
+
+/* --- Rahmen -------------------------------------------------------------- */
+/* Nimmt die ganze Höhe unter dem Kopf ein. min-height: 0 erlaubt es den
+   Kindern, kleiner als ihr Inhalt zu werden – sonst wächst ein Flex-Kind
+   auf seine Inhaltshöhe und schiebt den Rahmen auf. */
+.rahmen { flex: 1; min-height: 0; display: flex; align-items: stretch; }
+
+.seite {
+  width: 280px; flex: 0 0 280px;
+  height: 100%;
+  display: flex; flex-direction: column;
+  background: var(--flaeche); border-right: 1px solid var(--rand);
+}
+.seite-kopf {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--rand);
+}
+.baum { flex: 1; overflow: auto; padding: 8px 6px; }
+.seite-fuss {
+  padding: 10px 12px; border-top: 1px solid var(--rand); font-size: 13px;
+  display: flex; align-items: center; gap: 8px;
+}
+.fuss-rechts { margin-left: auto; display: flex; gap: 6px; }
+
+/* Der einzige Bereich, der scrollt. */
+.inhalt {
+  flex: 1; min-width: 0; overflow: auto;
+  padding: var(--inhalt-polster);
+}
+
+@media (max-width: 900px) {
+  .seite {
+    position: fixed; left: 0; top: var(--kopf-hoehe); z-index: 15;
+    height: calc(100% - var(--kopf-hoehe));
+    transform: translateX(-100%); transition: transform .18s ease;
+    box-shadow: var(--schatten);
+  }
+  .seite.offen { transform: none; }
+}
+
+/* --- Baum ---------------------------------------------------------------- */
+.baum { font-size: 13.5px; line-height: 25px; }
+
+/* Die Zeilenhöhe steht fest, damit kein Element sie durch eigene
+   Zeilenabstände oder Browser-Vorgaben für Knöpfe aufbläst.
+   Die Kinder sind genau so hoch wie die Zeile und tragen dieselbe
+   line-height: dann zentriert der halbe Zeilenabstand den Text von selbst
+   symmetrisch, statt ihn der Schriftmetrik zu überlassen.
+   25px statt der früheren 21px: je zwei Pixel mehr Luft über und unter dem
+   Text. Am Handy gilt weiter der eigene Wert aus der Media-Query. */
+.knoten-zeile {
+  display: flex; align-items: stretch; gap: 1px;
+  height: 25px; border-radius: var(--rund); padding-right: 2px;
+}
+.knoten-zeile > * {
+  height: 25px; line-height: 25px;
+  padding-top: 0; padding-bottom: 0; border: 0;
+}
+.knoten-zeile:hover { background: var(--akzent-leicht); }
+.knoten-zeile.aktiv { background: var(--akzent-leicht); }
+.knoten-zeile.aktiv > .knoten-name { font-weight: 600; }
+
+.pfeil {
+  width: 12px; flex: 0 0 12px;
+  border: 0; background: none; color: var(--leise);
+  cursor: pointer; font-size: 8px; padding: 0;
+}
+.pfeil.platzhalter { visibility: hidden; }
+
+.knoten-name {
+  flex: 1; min-width: 0; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  cursor: pointer; background: none; border: 0; font: inherit;
+  font-size: inherit; text-align: left;
+  padding: 0 2px;
+  /* Siehe --zeile-versatz: setzt den Text auf die optische Mitte der Zeile. */
+  position: relative; top: var(--zeile-versatz);
+}
+.knoten-name.navigation { color: var(--leise); }
+.zaehler { font-size: 11px; color: var(--leise); font-variant-numeric: tabular-nums; }
+.stift {
+  border: 0; background: none; cursor: pointer; color: var(--leise);
+  font-size: 13px; padding: 0 2px; opacity: 0;
+}
+.knoten-zeile:hover .stift, .knoten-zeile.aktiv .stift { opacity: 1; }
+.warnung { color: var(--gefahr); font-size: 11px; }
+/* Schmale Einrückung: je Ebene 3px Einzug plus der Platz des Pfeils. */
+.kinder { margin-left: 3px; border-left: 1px solid var(--rand); padding-left: 0; }
+
+/* Ziehen und Ablegen: Linie oben oder unten heisst "als Geschwister",
+   Rahmen heisst "als Unterordner". */
+.knoten-zeile[draggable="true"] { cursor: grab; }
+.knoten-zeile.ziel-davor { box-shadow: inset 0 2px 0 0 var(--akzent); }
+.knoten-zeile.ziel-danach { box-shadow: inset 0 -2px 0 0 var(--akzent); }
+.knoten-zeile.ziel-hinein { outline: 2px solid var(--akzent); outline-offset: -2px; }
+.baum.ziel-oberste { background: var(--akzent-leicht); }
+
+/* Automatisch aufgespannte Unterordner: nicht verschiebbar, nicht bearbeitbar. */
+.knoten-zeile.gruppe > .knoten-name { font-style: italic; }
+
+/* --- Ordnermenue --------------------------------------------------------- */
+.menue {
+  position: fixed; z-index: 40; min-width: 190px; padding: 4px;
+  background: var(--flaeche); border: 1px solid var(--rand);
+  border-radius: var(--rund); box-shadow: var(--schatten);
+}
+.menue-kopf {
+  padding: 5px 9px 7px; font-size: 12px; color: var(--leise);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  border-bottom: 1px solid var(--rand); margin-bottom: 4px;
+}
+.menue-eintrag {
+  display: flex; align-items: center; gap: 9px; width: 100%;
+  padding: 7px 9px; border: 0; border-radius: var(--rund);
+  background: none; color: var(--text); font: inherit; font-size: 14px;
+  text-align: left; cursor: pointer;
+}
+.menue-eintrag:hover, .menue-eintrag:focus-visible {
+  background: var(--akzent-leicht); outline: none;
+}
+.menue-eintrag svg { flex: 0 0 16px; color: var(--leise); }
+.menue-eintrag.gefahr { color: var(--gefahr); }
+.menue-eintrag.gefahr svg { color: var(--gefahr); }
+.menue-trenner { height: 1px; background: var(--rand); margin: 4px 0; }
+
+/* --- Inhaltsbereich ------------------------------------------------------ */
+.brotkrumen { font-size: 13px; color: var(--leise); margin-bottom: 4px; }
+.brotkrumen a { color: var(--leise); }
+
+.titelzeile {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  margin: 0 0 12px;
+}
+
+/* Bleibt am oberen Rand des Inhaltsbereichs stehen – dort wird gescrollt,
+   nicht im Fenster. Die negativen Ränder heben die Polsterung von .inhalt
+   auf, damit die Leiste über die volle Breite deckt und oben bündig sitzt;
+   sonst scrollte der Inhalt daran vorbei. Der Haftpunkt muss dieselbe
+   Polsterung zurücknehmen, sonst bliebe beim Scrollen ein Streifen
+   zwischen Kopfzeile und Leiste offen. */
+.titelzeile.haftend {
+  position: sticky; top: calc(-1 * var(--inhalt-polster)); z-index: 12;
+  align-items: center;
+  margin: calc(-1 * var(--inhalt-polster)) calc(-1 * var(--inhalt-polster)) 12px;
+  padding: 11px var(--inhalt-polster);
+  background: var(--grund); border-bottom: 1px solid var(--rand);
+}
+@media (max-width: 900px) {
+  .titelzeile.haftend { padding-top: 9px; padding-bottom: 9px; }
+}
+@media (max-width: 560px) {
+  /* Am Handy dürfen Titel und Knöpfe untereinander, sonst wird die Leiste
+     höher als der halbe Schirm. */
+  .titelzeile.haftend h1 { font-size: 17px; }
+  .titelzeile.haftend .werkzeuge { margin-left: 0; }
+}
+.titelzeile h1 { font-size: 20px; margin: 0; }
+.titelzeile .anzahl { color: var(--leise); font-size: 14px; }
+.werkzeuge { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+
+.karte {
+  background: var(--flaeche); border: 1px solid var(--rand);
+  border-radius: var(--rund); box-shadow: var(--schatten);
+}
+
+.hinweiskasten {
+  padding: 12px 14px; border-radius: var(--rund);
+  background: var(--akzent-leicht); border: 1px solid var(--rand);
+  margin-bottom: 12px; font-size: 14px;
+}
+.hinweiskasten.fehler { background: transparent; border-color: var(--gefahr); color: var(--gefahr); }
+
+/* --- Tabelle ------------------------------------------------------------- */
+.tabellenrahmen { overflow-x: auto; }
+table.liste {
+  width: 100%; border-collapse: collapse; background: var(--flaeche);
+  font-size: 13.5px;
+}
+table.liste th, table.liste td {
+  text-align: left; padding: 7px 12px; border-bottom: 1px solid var(--rand);
+  vertical-align: top;
+}
+table.liste th {
+  font-size: 11px; text-transform: uppercase; letter-spacing: .4px;
+  color: var(--leise); font-weight: 600; white-space: nowrap;
+  /* top: 0, nicht die Kopfhoehe: .tabellenrahmen ist wegen overflow-x ein
+     eigener Scroll-Container, sticky bezieht sich also auf ihn und nicht auf
+     das Fenster. Mit einem Abstand stuende die erste Zeile darueber durch. */
+  position: sticky; top: 0; background: var(--flaeche); z-index: 5;
+}
+.sortierknopf {
+  display: inline-flex; align-items: center; gap: 3px;
+  border: 0; background: none; font: inherit; color: inherit;
+  cursor: pointer; padding: 0; text-transform: inherit; letter-spacing: inherit;
+}
+.sortierknopf:hover { color: var(--akzent); }
+.sortierknopf.aktiv { color: var(--text); }
+/* Blass, solange nicht sortiert - beim Überfahren deutlich, damit man
+   überhaupt sieht, dass die Spalte sortierbar ist. */
+.sortierpfeil { opacity: 0; transition: opacity .12s; font-size: 10px; }
+.sortierknopf:hover .sortierpfeil { opacity: .55; }
+.sortierknopf.aktiv .sortierpfeil { opacity: 1; }
+th.nicht-sortierbar { cursor: default; }
+
+/* Auf breiten Schirmen sortiert man über die Spaltenköpfe – das Auswahlfeld
+   erscheint erst, wenn der Tabellenkopf ausgeblendet ist. */
+.sortierwahl { display: none; }
+@media (max-width: 720px) {
+  .sortierwahl {
+    display: flex; align-items: center; gap: 8px;
+    margin: 0 0 10px;
+  }
+  .sortierwahl label { margin: 0; white-space: nowrap; }
+  .sortierwahl select {
+    flex: 1; min-width: 0; padding: 7px 9px; font: inherit;
+    color: var(--text); background: var(--flaeche);
+    border: 1px solid var(--rand); border-radius: var(--rund);
+  }
+}
+
+.filterleiste {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
+  padding: 7px 10px; margin: 0 0 12px;
+  background: var(--akzent-leicht); border: 1px solid var(--rand);
+  border-radius: var(--rund);
+}
+.filterleiste .hinweis { margin: 0; }
+/* Der Auswahl-Ring liegt 3px aussen um den Chip und würde den Abstand sonst
+   aufbrauchen – diese Margen geben ihm Platz. */
+.filterleiste .marke-chip { margin: 0 3px; }
+
+/* Ein anklickbarer Tag verhält sich wie ein Knopf. */
+.marke-chip.klickbar { cursor: pointer; font-family: inherit; }
+.marke-chip.klickbar:hover { filter: brightness(1.12); }
+.marke-chip.klickbar:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px; }
+/* Der Ring nimmt die Akzentfarbe, nicht currentColor: bei einem Chip mit
+   weisser Schrift wäre er auf hellem Grund unsichtbar. */
+.marke-chip.gewaehlt { box-shadow: 0 0 0 1.5px var(--flaeche), 0 0 0 3px var(--akzent); }
+table.liste tbody tr:hover { background: var(--akzent-leicht); }
+td.titel a { font-weight: 550; }
+/* In der Liste stehen die Tags in einer Zeile: gekürzt auf fünf Zeichen,
+   der ganze Name im Tooltip. Kein Umbruch, damit die Zeilen gleich hoch
+   bleiben. */
+.marken { display: flex; flex-wrap: nowrap; gap: 3px; overflow: hidden; }
+.marke-chip {
+  font-size: 11px; padding: 0 6px; border-radius: var(--rund);
+  border: 1px solid var(--rand); white-space: nowrap; line-height: 1.5;
+  flex: 0 0 auto; cursor: default;
+  /* Als Flex-Box sitzt der Inhalt zuverlässig mittig – bei Text wie bei
+     einem Symbol. Mit vertical-align hing das an der Schriftmetrik und lag
+     um zweieinhalb Pixel daneben. Die Mindesthöhe hält Text- und
+     Symbolchips gleich hoch. */
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 21px;
+}
+.marke-voll { display: none; }
+/* In der Detailansicht ist Platz für den ganzen Namen. */
+.eigenschaften .marken { flex-wrap: wrap; overflow: visible; }
+td.datum, th.datum { white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+/* Die Verweisspalte ganz rechts: nur so breit wie das Symbol. */
+th.verweisspalte, td.verweisspalte { width: 1%; white-space: nowrap; padding-left: 4px; }
+.paperless-verweis {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 22px; border-radius: var(--rund);
+  color: var(--leise);
+}
+.paperless-verweis:hover {
+  background: var(--akzent-leicht); color: var(--akzent); text-decoration: none;
+}
+/* Nur für Screenreader: die Spalte trägt sichtbar keine Überschrift, eine
+   Tabelle ohne Spaltenname ist beim Vorlesen aber schwer einzuordnen. */
+.nur-vorlesen {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  table.liste { font-size: 14px; }
+  table.liste thead { display: none; }
+  table.liste tr { display: block; border-bottom: 1px solid var(--rand); padding: 8px 4px; }
+  table.liste td { display: block; border: 0; padding: 2px 8px; }
+  table.liste td.titel { font-size: 15px; padding-right: 36px; }
+  table.liste td:empty { display: none; }
+
+  /* In der Kartenansicht stünde das Symbol sonst allein auf einer eigenen
+     Zeile am Ende. Oben rechts neben dem Titel ist es dort, wo man es
+     sucht, und kostet keine Zeile. */
+  table.liste tr { position: relative; }
+  table.liste td.verweisspalte {
+    position: absolute; top: 6px; right: 4px; width: auto; padding: 0;
+  }
+
+  /* In der Kartenansicht steht jedes Feld auf eigener Zeile – da ist Platz
+     für die ganzen Tag-Namen, und sie dürfen auch umbrechen. */
+  .marken { flex-wrap: wrap; overflow: visible; }
+  .marke-kurz { display: none; }
+  .marke-voll { display: inline; }
+  /* Hier stehen Symbol und ganzer Name nebeneinander: das Symbol darf
+     kleiner sein, denn die Aussage trägt der Name – und zwischen beiden
+     braucht es Luft, sonst kleben sie aneinander. */
+  .marke-chip { gap: 5px; }
+  .marke-symbol svg { width: 13px; height: 13px; }
+}
+
+/* Am Handy bleiben die Trefferflaechen im Baum gross (F9.1). */
+@media (max-width: 900px) {
+  .baum { font-size: 15px; line-height: 32px; }
+  .knoten-zeile { height: 32px; }
+  .knoten-zeile > * { height: 32px; line-height: 32px; }
+  .pfeil { width: 22px; flex-basis: 22px; font-size: 11px; }
+  .stift { opacity: 1; font-size: 16px; }
+}
+
+/* --- Kacheln ------------------------------------------------------------- */
+.kacheln { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.kachel { overflow: hidden; }
+.kachel img { width: 100%; height: 190px; object-fit: cover; display: block; background: var(--grund); }
+.kachel .text { padding: 8px 10px; font-size: 14px; }
+
+/* --- Blättern ------------------------------------------------------------ */
+.blaettern {
+  display: flex; align-items: center; gap: 10px; justify-content: flex-start;
+  padding: 14px 0; color: var(--leise); font-size: 14px;
+}
+/* Kopfleiste der Liste: Suche links, Blättern rechts. */
+.listenleiste {
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 0 10px;
+}
+.listensuche {
+  flex: 0 1 340px; min-width: 0; padding: 6px 11px; font: inherit;
+  font-size: 13.5px; color: var(--text); background: var(--flaeche);
+  border: 1px solid var(--rand); border-radius: var(--rund);
+}
+.listensuche:focus { outline: 2px solid var(--akzent); outline-offset: -1px; }
+
+/* Dieselbe Funktion oben rechts über der Liste, damit man zum Weiterblättern
+   nicht erst nach unten scrollen muss. */
+.blaettern.oben {
+  justify-content: flex-end; padding: 0; margin-left: auto; font-size: 13px;
+}
+
+/* Nur ein Symbol darin: quadratisch statt in Textbreite. */
+.knopf.blatt {
+  justify-content: center; align-items: center;
+  width: 32px; height: 30px; padding: 0;
+}
+.knopf.blatt svg { display: block; }
+.knopf.blatt:not(:disabled):hover { color: var(--akzent); border-color: var(--akzent); }
+.blaettern.oben .knopf.blatt { width: 28px; height: 26px; }
+.blaettern.oben .knopf.blatt svg { width: 13px; height: 13px; }
+
+/* --- Detail -------------------------------------------------------------- */
+/* Eigenschaften links (schmal), Vorschau rechts (breit).
+   Keines der beiden Paneele hat eine feste Höhe: Das Grid macht die Zeile so
+   hoch wie das höhere von beiden, und align-items: stretch zieht das andere
+   mit. Die Vorschau folgt damit der Eigenschaftenkarte – bis zu ihrer
+   Mindesthöhe, unter der man ein PDF nicht mehr lesen könnte. */
+/* Die Dokumentansicht füllt den Inhaltsbereich aus, damit unter den beiden
+   Karten kein leerer Streifen stehen bleibt: die Seite ist eine Spalte über
+   die volle Höhe, das Gitter nimmt sich den Rest unter der Titelzeile.
+   min-height statt height, damit eine lange Eigenschaftenliste weiterhin
+   über das Fenster hinauswachsen und scrollen darf.
+
+   Die Höhe wird gerechnet statt in Prozent angegeben: min-height: 100%
+   bliebe wirkungslos, weil keiner der Vorfahren eine feste Höhe nennt,
+   sondern alle ihre Höhe aus dem Flex-Fluss beziehen. Abgezogen werden die
+   Kopfzeile und die Polsterung von .inhalt oben und unten. */
+.detailseite {
+  display: flex; flex-direction: column;
+  min-height: calc(100vh - var(--kopf-hoehe) - 2 * var(--inhalt-polster));
+}
+/* dvh meint die tatsächlich sichtbare Höhe – am Handy ohne die ein- und
+   ausfahrende Browserleiste. Als eigene Regel, damit ältere Browser die
+   vh-Zeile darüber behalten. */
+@supports (height: 100dvh) {
+  .detailseite {
+    min-height: calc(100dvh - var(--kopf-hoehe) - 2 * var(--inhalt-polster));
+  }
+}
+.detailseite > .detail { flex: 1; }
+
+.detail {
+  display: grid; gap: 16px; align-items: stretch;
+  grid-template-columns: minmax(260px, 1fr) minmax(0, 2fr);
+}
+.detail > .eigenschaften { height: auto; overflow: visible; }
+@media (max-width: 1000px) {
+  .detail { grid-template-columns: 1fr; }
+  /* Einspaltig gibt es keine gemeinsame Zeile mehr: die Vorschau bekommt
+     ihre eigene Höhe. */
+  .betrachter { min-height: min(85vh, 1200px); }
+}
+.betrachter {
+  /* Keine height: die gibt das Grid vor. Nur eine Untergrenze, damit die
+     Vorschau bei einer kurzen Eigenschaftenliste lesbar bleibt. */
+  min-height: min(70vh, 720px);
+  display: flex; flex-direction: column;
+  border: 1px solid var(--rand);
+  border-radius: var(--rund); overflow: hidden; background: var(--flaeche);
+}
+/* Als Flex-Kind füllt der Rahmen die Höhe auch dann, wenn sie vom Grid und
+   nicht von einer CSS-Länge kommt – height: 100% griffe dort nicht sicher. */
+.betrachter iframe, .betrachter embed {
+  flex: 1; min-height: 0; width: 100%; border: 0;
+}
+
+/* Selbst gerendert (pdf.js): die Seiten scrollen im Behälter. */
+.betrachter.selbst { overflow: auto; -webkit-overflow-scrolling: touch; }
+.pdf-leiste {
+  position: sticky; top: 0; z-index: 2;
+  padding: 5px 10px; font-size: 12px; color: var(--leise);
+  background: var(--flaeche); border-bottom: 1px solid var(--rand);
+}
+.pdf-seiten { display: flex; flex-direction: column; gap: 10px; padding: 10px; }
+.pdf-seite {
+  background: var(--grund); border: 1px solid var(--rand); border-radius: var(--rund);
+  min-height: 120px; overflow: hidden;
+}
+.pdf-seite canvas { display: block; }
+
+.eigenschaften { padding: 2px 0; font-size: 14px; }
+.eigenschaften dt {
+  font-size: 13px; text-transform: uppercase; letter-spacing: .4px;
+  color: var(--leise); margin-top: 9px;
+}
+.eigenschaften dd { margin: 1px 0 0; line-height: 1.4; }
+.eigenschaften dl { margin: 0; padding: 0 12px 12px; }
+
+/* Einspaltig ist die Karte so breit wie der Schirm – da darf die Schrift
+   wieder normal gross sein, sie muss sich keinen Platz teilen.
+   Dieser Block muss hinter den Grundregeln stehen: er ist gleich
+   spezifisch, und vorher stand er weiter oben in der Datei. Damit gewannen
+   immer die Grundregeln, und die Vergrösserung hat nie gegriffen. */
+@media (max-width: 1000px) {
+  .eigenschaften { font-size: 15px; }
+  .eigenschaften dt { font-size: 11.5px; margin-top: 12px; }
+  .eigenschaften dd { line-height: 1.45; }
+  .eigenschaften dl { padding: 0 14px 14px; }
+}
+
+/* --- Dashboard ----------------------------------------------------------- */
+.dashkacheln { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+.dashkachel { padding: 14px; display: block; color: var(--text); }
+.dashkachel:hover { text-decoration: none; border-color: var(--akzent); }
+.dashkachel .zahl { font-size: 26px; font-weight: 650; }
+.dashkachel .wo { font-size: 12px; color: var(--leise); }
+
+/* --- Dialog -------------------------------------------------------------- */
+.dialog {
+  width: min(720px, 96vw); max-height: 92vh; padding: 0;
+  border: 1px solid var(--rand); border-radius: var(--rund);
+  background: var(--flaeche); color: var(--text); box-shadow: var(--schatten);
+}
+.dialog::backdrop { background: rgba(16, 24, 40, .45); }
+
+/* Nur im geöffneten Zustand eine Flex-Box: eine display-Regel ohne [open]
+   überschriebe das display:none, das <dialog> geschlossen selbst setzt –
+   der Dialog stünde dann dauernd auf der Seite.
+   Das Formular bekommt seine Höhe hier vom Dialog, statt sie mit einem
+   eigenen max-height: 92vh noch einmal vorzugeben. Das war um die beiden
+   Rahmenlinien zu hoch, und der Dialog bekam für diese zwei Pixel einen
+   eigenen Scrollbalken über die ganze Höhe. Gescrollt wird im Körper. */
+.dialog[open] { display: flex; flex-direction: column; }
+.dialog form { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.dialog-kopf {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; border-bottom: 1px solid var(--rand);
+}
+/* Der Titel trägt den Ordnernamen und kann lang werden: er darf schrumpfen
+   und abschneiden, das Kreuz daneben bleibt immer sichtbar. */
+.dialog-kopf h2 {
+  font-size: 17px; margin: 0;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.knopf.schliessknopf {
+  flex: 0 0 auto;
+  padding: 0; width: 30px; height: 30px;
+  justify-content: center; color: var(--leise);
+}
+.knopf.schliessknopf:hover { color: var(--text); }
+.dialog-koerper { padding: 14px 16px; overflow: auto; display: grid; gap: 16px; }
+.dialog-fuss {
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 16px; border-top: 1px solid var(--rand);
+}
+.luecke { flex: 1; }
+
+fieldset { border: 1px solid var(--rand); border-radius: var(--rund); padding: 12px 14px; margin: 0; }
+legend { font-size: 12px; text-transform: uppercase; letter-spacing: .4px; color: var(--leise); padding: 0 4px; }
+
+.feld { display: grid; gap: 4px; }
+.feld > span { font-size: 13px; color: var(--leise); }
+.feld input, .feld select, .kriterium input, .kriterium select, .linkzeile input {
+  padding: 7px 9px; font: inherit; color: var(--text);
+  background: var(--grund); border: 1px solid var(--rand); border-radius: var(--rund);
+}
+.zeile { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.zeile > .feld { flex: 1; min-width: 150px; }
+/* Eingabefelder und Auswahllisten wachsen von sich aus auf ihren Inhalt –
+   ein select wird so breit wie seine längste Option. In einem Grid- oder
+   Flex-Kind verhindert das jedes Schrumpfen, und die Zeile lief aus dem
+   Dialog heraus. min-width: 0 gibt das Schrumpfen frei. */
+.feld { min-width: 0; }
+.feld input, .feld select { min-width: 0; max-width: 100%; }
+
+/* Auf schmalen Schirmen ist für zwei Felder nebeneinander kein Platz: dort
+   stehen sie untereinander, jedes über die ganze Breite. */
+@media (max-width: 560px) {
+  .zeile { flex-direction: column; gap: 10px; }
+  .zeile > .feld { min-width: 0; }
+}
+
+.haken { display: flex; gap: 8px; align-items: flex-start; padding: 5px 0; font-size: 14px; }
+.haken input { margin-top: 3px; }
+.haken.unter { margin-left: 24px; }
+.hinweis { font-size: 13px; color: var(--leise); margin: 6px 0 0; }
+
+.geerbt {
+  font-size: 13px; color: var(--leise); background: var(--grund);
+  border: 1px dashed var(--rand); border-radius: var(--rund); padding: 8px 10px; margin-bottom: 8px;
+}
+.kriterien { display: grid; gap: 8px; margin: 10px 0; }
+.kriterium {
+  display: grid; gap: 6px; grid-template-columns: 150px 130px 1fr auto;
+  align-items: center;
+}
+.kriterium .weg { border: 0; background: none; color: var(--leise); cursor: pointer; font-size: 16px; }
+.kriterium .mehrfach { min-height: 76px; }
+@media (max-width: 700px) { .kriterium { grid-template-columns: 1fr; } }
+
+.linkzeile { display: flex; gap: 8px; }
+.linkzeile input { flex: 1; min-width: 0; }
+.treffer { font-size: 14px; font-weight: 550; margin: 8px 0 0; }
+
+/* --- Tooltip (Popper) ---------------------------------------------------- */
+.tooltip {
+  position: absolute; z-index: 60; max-width: 280px;
+  padding: 4px 8px; border-radius: var(--rund);
+  background: #1c2430; color: #f4f6f8;
+  font-size: 12px; line-height: 1.45;
+  box-shadow: 0 2px 10px rgba(16, 24, 40, .25);
+  pointer-events: none;
+  opacity: 0; visibility: hidden;
+  transition: opacity .12s ease;
+}
+.tooltip[data-zeige] { opacity: 1; visibility: visible; }
+
+@media (prefers-color-scheme: dark) {
+  .tooltip { background: #33404f; color: #eef1f5; }
+}
+
+.tooltip-pfeil, .tooltip-pfeil::before {
+  position: absolute; width: 8px; height: 8px; background: inherit;
+}
+.tooltip-pfeil { visibility: hidden; }
+.tooltip-pfeil::before {
+  content: ''; visibility: visible; transform: rotate(45deg); border-radius: 1px;
+}
+.tooltip[data-popper-placement^="top"] .tooltip-pfeil { bottom: -4px; }
+.tooltip[data-popper-placement^="bottom"] .tooltip-pfeil { top: -4px; }
+.tooltip[data-popper-placement^="left"] .tooltip-pfeil { right: -4px; }
+.tooltip[data-popper-placement^="right"] .tooltip-pfeil { left: -4px; }
+
+.laedt { color: var(--leise); padding: 24px 4px; }
+/* Nur die Meldung in der Liste - NICHT jedes Element mit dieser Klasse:
+   ein generisches .leer traf auch den Platzhalter-Pfeil im Baum und gab
+   ihm 14px Innenabstand, sodass Ordner ohne Unterordner eingerueckt waren. */
+.karte.leer { color: var(--leise); padding: 28px 14px; text-align: center; }
+
+/* --- Symbole je Ordner (F1.7) --------------------------------------------- */
+.knoten-symbol {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 19px; flex: 0 0 19px; color: var(--leise);
+  /* Keine eigene Höhe: die kommt von .knoten-zeile > * und ist am Handy
+     32px statt 21px. Eine feste Höhe hier hat dieselbe Spezifität, stand
+     aber später in der Datei – das Symbol behielt seine 21px und klebte
+     am oberen Rand der höheren Zeile (gemessen: 5.5px zu hoch). */
+  /* Kein Versatz: den braucht nur die Schrift, weil sie ihre Zeilenbox
+     unsymmetrisch füllt. Das Symbol sitzt als Flex-Box ohnehin mittig in
+     der Zeile – und dort, wo die Schrift nach ihrer Korrektur auch steht. */
+}
+.knoten-zeile.aktiv .knoten-symbol { color: var(--akzent); }
+
+/* Der Knopf im Editor zeigt das gewählte Symbol und öffnet den Wähler. */
+.namenszeile { display: flex; align-items: stretch; gap: 8px; }
+.namenszeile input { flex: 1; min-width: 0; }
+.knopf.symbolknopf {
+  flex: 0 0 auto; width: 38px; padding: 0;
+  justify-content: center; color: var(--leise);
+}
+.knopf.symbolknopf:hover { color: var(--akzent); }
+
+.dialog.symbolwahl { width: min(760px, 96vw); }
+.symbolwahl-titel { min-width: 0; }
+.symbolwahl-titel h2 { font-size: 17px; margin: 0; }
+.symbolwahl-titel .hinweis { margin: 2px 0 0; }
+.dialog.symbolwahl .dialog-koerper { gap: 12px; }
+/* Thema links, Suche daneben. Schmaler stehen sie untereinander, sonst
+   bliebe für beides zu wenig Platz. */
+.symbolwahl-leiste { display: flex; gap: 8px; flex-wrap: wrap; }
+.symbolwahl-leiste select {
+  flex: 0 1 230px; min-width: 0; padding: 8px 9px; font: inherit;
+  border: 1px solid var(--rand); border-radius: var(--rund);
+  background: var(--grund); color: var(--text);
+}
+.symbolwahl-leiste #sw-suche { flex: 1 1 200px; }
+.dialog.symbolwahl #sw-suche {
+  padding: 8px 11px; font: inherit;
+  border: 1px solid var(--rand); border-radius: var(--rund);
+  background: var(--grund); color: var(--text);
+}
+.symbolgitter {
+  display: grid; gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+  /* Eigener Scrollbereich: das Raster wächst beim Scrollen nach, der Rest
+     des Dialogs soll dabei stehen bleiben. */
+  overflow: auto; max-height: 60vh; padding: 2px;
+}
+.symbolkachel {
+  display: flex; align-items: center; justify-content: center;
+  height: 52px; padding: 0; cursor: pointer;
+  border: 1px solid var(--rand); border-radius: var(--rund);
+  background: var(--flaeche); color: var(--text);
+}
+.symbolkachel:hover { background: var(--akzent-leicht); border-color: var(--akzent); }
+.symbolkachel.aktiv {
+  border-color: var(--akzent); background: var(--akzent-leicht); color: var(--akzent);
+}
+
+/* --- Darstellung: Symbole und Logos (F7) ---------------------------------- */
+/* Ein Tag-Symbol steht anstelle der Kurzform; die Grössen richten sich nach
+   dem Chip, damit die Zeile nicht höher wird. */
+.marke-kurz.marke-symbol {
+  display: inline-flex; align-items: center; justify-content: center;
+  /* Kein vertical-align mehr: der Chip zentriert selbst. */
+}
+
+/* Logo vor dem Namen des Korrespondenten in der Liste. */
+.mit-logo { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.korrespondent-logo {
+  width: 18px; height: 18px; flex: 0 0 18px;
+  object-fit: contain; border-radius: 3px; background: var(--flaeche);
+}
+
+/* Logo in der Dokumentansicht: oben rechts in der Ecke der Karte, bündig an
+   beiden Kanten. Der Ring darum ist zur Ecke hin offen – drei Viertel des
+   Kreises stehen, das vierte weist nach aussen. Gedreht, weil jede
+   border-Seite eines runden Elements genau ein Viertel zeichnet und die
+   Lücke sonst gerade nach oben zeigte. */
+.eigenschaften { position: relative; }
+/* Ein Viertelkreis schneidet die Ecke ab: der Bogen läuft von der oberen
+   Kante der Karte zur rechten und trennt so das Logo vom Rest. Gezeichnet
+   wird er von den beiden inneren Rändern, die durch den Radius von 100 %
+   an dieser einen Ecke zu einem Bogen zusammenlaufen. */
+.logo-ecke {
+  position: absolute; top: 0; right: 0; z-index: 1;
+  width: 74px; height: 74px;
+  display: flex; align-items: center; justify-content: center;
+  /* Das Logo sitzt in der Ecke, nicht in der Mitte des Quadrats: der Platz
+     innerhalb des Bogens liegt oben rechts. */
+  padding: 0 4px 16px 16px;
+  background: var(--flaeche);
+  border-left: 1.5px solid var(--rand);
+  border-bottom: 1.5px solid var(--rand);
+  border-radius: 0 var(--rund) 0 100%;
+}
+.logo-ecke img { width: 44px; height: 44px; object-fit: contain; }
+/* Die erste Beschriftung darf nicht unter das Logo laufen. */
+.eigenschaften.hat-logo dl > dt:first-child,
+.eigenschaften.hat-logo dl > dd:nth-of-type(1) { padding-right: 68px; }
+
+/* --- Spaltenwahl an der Tabelle ------------------------------------------- */
+.spaltenwahl { position: relative; }
+.spaltenmenue {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 30;
+  min-width: 190px; padding: 6px;
+  background: var(--flaeche); border: 1px solid var(--rand);
+  border-radius: var(--rund); box-shadow: var(--schatten);
+}
+.spaltenzeile {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 7px; border-radius: var(--rund);
+  font-size: 13.5px; cursor: pointer;
+}
+.spaltenzeile:hover { background: var(--akzent-leicht); }
+.spaltenzeile input:disabled { cursor: default; }
+.spaltenzeile:has(input:disabled) { color: var(--leise); cursor: default; }
+
+/* --- Einstellungen --------------------------------------------------------- */
+.einstellungen {
+  display: grid; gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  align-items: start;
+}
+.einstellungskarte { padding: 14px 16px; }
+.einstellungskopf h2 { font-size: 16px; margin: 0 0 4px; }
+.einstellungskopf .hinweis { margin: 0 0 10px; }
+.einstellungskarte .listensuche { flex: 1 1 auto; width: 100%; margin-bottom: 10px; }
+
+.zuordnungsliste {
+  display: flex; flex-direction: column;
+  max-height: 60vh; overflow: auto;
+}
+.zuordnung {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 2px; border-bottom: 1px solid var(--rand);
+}
+.zuordnung:last-child { border-bottom: 0; }
+.zuordnung-vorschau {
+  width: 30px; height: 30px; flex: 0 0 30px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--rand); border-radius: var(--rund);
+  color: var(--leise); background: var(--grund);
+}
+.zuordnung-vorschau img { max-width: 26px; max-height: 26px; object-fit: contain; }
+.zuordnung-kurz { font-size: 10px; letter-spacing: .2px; }
+.zuordnung-name {
+  flex: 1; min-width: 0; font-size: 13.5px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.zuordnung-knoepfe { display: flex; gap: 6px; flex: 0 0 auto; }
+.fehler-text { color: var(--gefahr); }

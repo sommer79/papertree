@@ -1,0 +1,22 @@
+# Im Repository stehen überall LF. Ohne diese Festlegung liefe ein unter
+# Windows ausgechecktes Shell-Skript mit CRLF-Zeilenenden auf dem Server in
+# "bad interpreter" – die Sicherung wäre kaputt, ohne dass man es ansieht.
+* text=auto eol=lf
+
+*.sh      text eol=lf
+*.py      text eol=lf
+*.js      text eol=lf
+*.mjs     text eol=lf
+*.css     text eol=lf
+*.html    text eol=lf
+*.yml     text eol=lf
+*.md      text eol=lf
+*.conf    text eol=lf
+Dockerfile text eol=lf
+
+*.png     binary
+*.jpg     binary
+*.webp    binary
+*.gif     binary
+*.pdf     binary
+*.xlsx    binary

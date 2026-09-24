@@ -1,0 +1,44 @@
+# Ausschnitt für den bestehenden Paperless-Stack auf dem Server.
+#
+# PaperTree hängt sich in dasselbe Netz, damit es den Webserver-Container
+# direkt erreicht und nicht über den Reverse Proxy zurücklaufen muss.
+# Der Name des Netzes muss dem des Paperless-Stacks entsprechen – mit
+# "docker network ls" nachsehen, üblich ist "paperless_default".
+
+services:
+  papertree:
+    build: ..
+    image: papertree:0.2.0
+    container_name: papertree
+    restart: unless-stopped
+    environment:
+      # Intern, im Docker-Netz – kein Weg über nginx.
+      PAPERTREE_PAPERLESS_URL: http://paperless-webserver-1:8000
+      # Wie Paperless für den Browser erreichbar ist (Knopf "In Paperless öffnen").
+      PAPERTREE_PAPERLESS_PUBLIC_URL: https://paperless.example.org
+      # Pfad, unter dem nginx PaperTree ausliefert.
+      PAPERTREE_BASE_PATH: papertree
+      PAPERTREE_DB: /data/papertree.sqlite3
+      # Die Logos der Korrespondenten. Im selben Volume wie die
+      # Datenbank, damit eine Sicherung beides zusammen erfasst.
+      PAPERTREE_LOGO_DIR: /data/logos
+    volumes:
+      - papertree_daten:/data
+    ports:
+      # Nur lokal: nginx auf dem Host leitet weiter.
+      - "127.0.0.1:8080:8080"
+    networks:
+      - paperless
+
+volumes:
+  papertree_daten:
+    # Fester Name, unabhängig vom Compose-Projekt. Ohne ihn stellt Compose
+    # den Projektnamen voran, und der kommt aus dem Verzeichnis der
+    # Compose-Datei: aus einem anderen Ordner gestartet, entstünde ein
+    # zweites, leeres Volume, und der Ordnerbaum schiene verloren.
+    name: papertree_daten
+
+networks:
+  paperless:
+    external: true
+    name: paperless_default

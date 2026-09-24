@@ -1,0 +1,24 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Die eigene Datenbank und die hochgeladenen Logos gehören nicht ins Repo.
+*.sqlite3
+*.sqlite3-wal
+*.sqlite3-shm
+/logos/
+/daten/
+
+# Arbeitsdateien einer Installation: Auswertungen, Berichte, gerenderte
+# Seiten. Sie enthalten Inhalte aus dem eigenen Archiv und haben in einem
+# öffentlichen Repository nichts zu suchen.
+*.xlsx
+*.xls
+*_bilder/
+*_gelesen*.json
+*_lokal*.json
+*_paperless*.json
+*_uebertrag*.json
+sicherungen/
