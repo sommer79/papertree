@@ -95,7 +95,7 @@ Unterordner läuft genauso.
 
 ## Betrieb
 
-Voraussetzung ist ein laufendes Paperless-ngx in Docker. Dann genügt:
+Voraussetzung ist ein laufendes Paperless-ngx in Docker.
 
 ```bash
 git clone https://github.com/sommer79/papertree.git
@@ -103,28 +103,40 @@ cd papertree
 ./deploy/install.sh
 ```
 
-Das Skript sucht sich zusammen, was es braucht – den Paperless-Container,
-dessen Docker-Netz, die interne und die öffentliche Adresse, einen freien
-Port – und legt das Gefundene als Vorgabe in die Abfrage. Enter übernimmt,
-jeder Wert lässt sich überschreiben. Geschrieben wird erst nach einer
-Bestätigung, und zwar in `deploy/.env`; die Compose-Datei selbst bleibt
-unverändert.
+Das ist alles – der Installer führt durch beide Teile der Einrichtung:
 
-Nur nachsehen, ohne etwas zu ändern:
+**1. Container.** Er sucht sich zusammen, was er braucht: den
+Paperless-Container (erkannt am Image, nicht am Namen), dessen Docker-Netz,
+die interne und die öffentliche Adresse und einen freien Port. Das Gefundene
+steht als Vorgabe in jeder Abfrage, Enter übernimmt, jeder Wert lässt sich
+überschreiben. Geschrieben wird erst nach einer Bestätigung, und zwar nach
+`deploy/.env`; die Compose-Datei selbst bleibt unangetastet. Danach baut und
+startet er den Container und prüft nicht nur, ob PaperTree antwortet,
+sondern auch, ob es Paperless erreicht.
+
+**2. Reverse Proxy.** PaperTree hört absichtlich nur auf `127.0.0.1` und
+muss unter **derselben Adresse wie Paperless** ausgeliefert werden – nur
+dann gilt dessen Sitzungs-Cookie, und ohne den ist niemand angemeldet.
+Findet der Installer nginx, bietet er an, den nötigen Block selbst
+einzutragen: mit Sicherung, anschliessendem `nginx -t` und Neuladen. Wird
+die Datei dabei beanstandet, spielt er die Sicherung zurück, statt eine
+kaputte Konfiguration stehen zu lassen.
+
+Bei einem anderen Reverse Proxy – Apache, Caddy, Traefik – sagt er, was
+einzurichten ist: den Pfad `/papertree/` auf `http://127.0.0.1:<port>/`
+leiten, ungepuffert, damit die PDF-Vorschau als Strom ankommt. Als Vorlage
+dient `deploy/nginx-papertree.conf`.
+
+Nur nachsehen, ohne irgendetwas zu ändern:
 
 ```bash
 ./deploy/install.sh --pruefen
 ```
 
-Danach fehlt noch der Reverse Proxy. PaperTree hört absichtlich nur auf
-`127.0.0.1` – es muss unter **derselben Adresse wie Paperless** ausgeliefert
-werden, sonst gilt der Sitzungs-Cookie nicht und niemand ist angemeldet. Bei
-nginx den Inhalt von `deploy/nginx-papertree.conf` in den `server`-Block von
-Paperless einfügen, vor `location /`, dann `nginx -t && systemctl reload
-nginx`. Wer nginx über `sites-available` pflegt, kann das überlassen an:
+Den nginx-Schritt kann man auch einzeln nachholen:
 
 ```bash
-sudo python3 deploy/nginx_einfuegen.py
+sudo python3 deploy/nginx_einfuegen.py \n     --host paperless.example.org --pfad papertree --port 8080 --neuladen
 ```
 
 ### Einstellungen

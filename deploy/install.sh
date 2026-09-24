@@ -197,23 +197,58 @@ case "$ANTWORT_CODE" in
     *)   grau "  Antwort von /api/ich: HTTP $ANTWORT_CODE" ;;
 esac
 
-# --- Was jetzt noch fehlt ----------------------------------------------------
-titel "Noch zu tun: der Reverse Proxy"
-cat <<ANLEITUNG
-PaperTree hört nur auf 127.0.0.1:$PAPERTREE_PORT. Damit es im Browser
-erscheint – und damit der Sitzungs-Cookie von Paperless gilt –, muss es
-unter derselben Adresse ausgeliefert werden wie Paperless.
+# --- Reverse Proxy -----------------------------------------------------------
+# PaperTree hört nur auf 127.0.0.1. Damit es im Browser erscheint – und
+# damit der Sitzungs-Cookie von Paperless gilt –, muss es unter derselben
+# Adresse ausgeliefert werden wie Paperless.
+titel "Reverse Proxy"
 
-Bei nginx den Inhalt von deploy/nginx-papertree.conf in den server-Block
-von ${OEFFENTLICH:-Paperless} einfügen, vor "location /", dann:
+HOST="$(echo "$OEFFENTLICH" | sed -E 's|^[a-z]+://||; s|[:/].*$||')"
+FERTIG=0
 
-    nginx -t && systemctl reload nginx
+if command -v nginx >/dev/null 2>&1 && [ -n "$HOST" ]; then
+    gruen "  nginx gefunden"
+    if [ "$(id -u)" -ne 0 ] && ! command -v sudo >/dev/null 2>&1; then
+        grau "  Für /etc/nginx braucht es root – bitte den Schritt unten von Hand tun."
+    else
+        printf '  Soll PaperTree in die nginx-Konfiguration eingetragen werden? [j/N] '
+        read -r ANTWORT
+        case "$ANTWORT" in
+            [jJyY]*)
+                ALS_ROOT=""
+                [ "$(id -u)" -ne 0 ] && ALS_ROOT="sudo"
+                if $ALS_ROOT python3 "$HIER/nginx_einfuegen.py"                         --host "$HOST" --pfad "$BASIS_PFAD"                         --port "$PAPERTREE_PORT" --neuladen; then
+                    FERTIG=1
+                else
+                    rot "  Eintrag nicht möglich – bitte von Hand, siehe unten."
+                fi
+                ;;
+        esac
+    fi
+else
+    grau "  Kein nginx gefunden (oder keine Adresse bekannt)."
+fi
 
-Wer nginx über sites-available pflegt, kann das überlassen an:
+if [ "$FERTIG" -eq 0 ]; then
+    cat <<ANLEITUNG
 
-    sudo python3 deploy/nginx_einfuegen.py
+  Noch zu tun: PaperTree muss unter derselben Adresse erscheinen wie
+  Paperless, sonst gilt dessen Sitzungs-Cookie nicht und niemand ist
+  angemeldet. Es hört auf 127.0.0.1:$PAPERTREE_PORT.
 
-Danach erreichbar unter: ${OEFFENTLICH:-https://…}/$BASIS_PFAD/
+  nginx:
+      sudo python3 deploy/nginx_einfuegen.py --host ${HOST:-DEINE-ADRESSE}            --pfad $BASIS_PFAD --port $PAPERTREE_PORT --neuladen
+
+  Apache, Caddy, Traefik und andere: den Pfad /$BASIS_PFAD/ auf
+  http://127.0.0.1:$PAPERTREE_PORT/ leiten. Wichtig sind der abschliessende
+  Schrägstrich am Ziel und ein ungepufferter Durchlauf, damit die
+  PDF-Vorschau als Strom ankommt. Vorlage: deploy/nginx-papertree.conf
 ANLEITUNG
+fi
 
 titel "Fertig."
+if [ "$FERTIG" -eq 1 ]; then
+    gruen "  PaperTree läuft unter ${OEFFENTLICH}/$BASIS_PFAD/"
+else
+    grau "  Nach dem Schritt oben erreichbar unter: ${OEFFENTLICH:-https://…}/$BASIS_PFAD/"
+fi
