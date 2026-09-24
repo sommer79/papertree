@@ -1,23 +1,27 @@
-# Ausschnitt für den bestehenden Paperless-Stack auf dem Server.
+# PaperTree neben einem bestehenden Paperless-ngx-Stack.
 #
-# PaperTree hängt sich in dasselbe Netz, damit es den Webserver-Container
-# direkt erreicht und nicht über den Reverse Proxy zurücklaufen muss.
-# Der Name des Netzes muss dem des Paperless-Stacks entsprechen – mit
-# "docker network ls" nachsehen, üblich ist "paperless_default".
+# Alle veränderlichen Werte kommen aus der Datei .env daneben; die Vorgaben
+# hier greifen, wenn dort nichts steht. `deploy/install.sh` ermittelt die
+# Werte selbst und legt die .env an – von Hand muss in dieser Datei nichts
+# geändert werden.
+#
+# PaperTree hängt sich in dasselbe Docker-Netz wie Paperless, damit es den
+# Webserver-Container direkt erreicht und nicht über den Reverse Proxy
+# zurücklaufen muss.
 
 services:
   papertree:
     build: ..
-    image: papertree:0.2.0
-    container_name: papertree
+    image: papertree:${PAPERTREE_VERSION:-0.2.0}
+    container_name: ${PAPERTREE_CONTAINER:-papertree}
     restart: unless-stopped
     environment:
-      # Intern, im Docker-Netz – kein Weg über nginx.
-      PAPERTREE_PAPERLESS_URL: http://paperless-webserver-1:8000
+      # Intern, im Docker-Netz – kein Weg über den Reverse Proxy.
+      PAPERTREE_PAPERLESS_URL: ${PAPERTREE_PAPERLESS_URL:-http://paperless-webserver-1:8000}
       # Wie Paperless für den Browser erreichbar ist (Knopf "In Paperless öffnen").
-      PAPERTREE_PAPERLESS_PUBLIC_URL: https://paperless.example.org
-      # Pfad, unter dem nginx PaperTree ausliefert.
-      PAPERTREE_BASE_PATH: papertree
+      PAPERTREE_PAPERLESS_PUBLIC_URL: ${PAPERTREE_PAPERLESS_PUBLIC_URL:-}
+      # Pfad, unter dem der Reverse Proxy PaperTree ausliefert.
+      PAPERTREE_BASE_PATH: ${PAPERTREE_BASE_PATH:-papertree}
       PAPERTREE_DB: /data/papertree.sqlite3
       # Die Logos der Korrespondenten. Im selben Volume wie die
       # Datenbank, damit eine Sicherung beides zusammen erfasst.
@@ -25,8 +29,10 @@ services:
     volumes:
       - papertree_daten:/data
     ports:
-      # Nur lokal: nginx auf dem Host leitet weiter.
-      - "127.0.0.1:8080:8080"
+      # Nur auf dem Rechner selbst erreichbar. Nach aussen führt der
+      # Reverse Proxy – und nur über ihn gilt der Sitzungs-Cookie von
+      # Paperless, an dem die ganze Anmeldung hängt.
+      - "127.0.0.1:${PAPERTREE_PORT:-8080}:8080"
     networks:
       - paperless
 
@@ -36,9 +42,9 @@ volumes:
     # den Projektnamen voran, und der kommt aus dem Verzeichnis der
     # Compose-Datei: aus einem anderen Ordner gestartet, entstünde ein
     # zweites, leeres Volume, und der Ordnerbaum schiene verloren.
-    name: papertree_daten
+    name: ${PAPERTREE_VOLUME:-papertree_daten}
 
 networks:
   paperless:
     external: true
-    name: paperless_default
+    name: ${PAPERLESS_NETZ:-paperless_default}

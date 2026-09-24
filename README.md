@@ -95,24 +95,37 @@ Unterordner läuft genauso.
 
 ## Betrieb
 
-Vorbereitung auf `dem Server`:
+Voraussetzung ist ein laufendes Paperless-ngx in Docker. Dann genügt:
 
 ```bash
-docker network ls | grep paperless
+git clone https://github.com/sommer79/papertree.git
+cd papertree
+./deploy/install.sh
 ```
 
-Den Netzwerknamen in `deploy/docker-compose.papertree.yml` eintragen, falls er
-nicht `paperless_default` lautet. Dann:
+Das Skript sucht sich zusammen, was es braucht – den Paperless-Container,
+dessen Docker-Netz, die interne und die öffentliche Adresse, einen freien
+Port – und legt das Gefundene als Vorgabe in die Abfrage. Enter übernimmt,
+jeder Wert lässt sich überschreiben. Geschrieben wird erst nach einer
+Bestätigung, und zwar in `deploy/.env`; die Compose-Datei selbst bleibt
+unverändert.
+
+Nur nachsehen, ohne etwas zu ändern:
 
 ```bash
-docker compose -f deploy/docker-compose.papertree.yml up -d --build
+./deploy/install.sh --pruefen
 ```
 
-nginx: den Inhalt von `deploy/nginx-papertree.conf` in den bestehenden
-`server`-Block von `paperless.example.org` einfügen, vor `location /`, dann
-`nginx -t && systemctl reload nginx`.
+Danach fehlt noch der Reverse Proxy. PaperTree hört absichtlich nur auf
+`127.0.0.1` – es muss unter **derselben Adresse wie Paperless** ausgeliefert
+werden, sonst gilt der Sitzungs-Cookie nicht und niemand ist angemeldet. Bei
+nginx den Inhalt von `deploy/nginx-papertree.conf` in den `server`-Block von
+Paperless einfügen, vor `location /`, dann `nginx -t && systemctl reload
+nginx`. Wer nginx über `sites-available` pflegt, kann das überlassen an:
 
-Danach erreichbar unter `https://paperless.example.org/papertree/`.
+```bash
+sudo python3 deploy/nginx_einfuegen.py
+```
 
 ### Einstellungen
 
@@ -121,6 +134,8 @@ Danach erreichbar unter `https://paperless.example.org/papertree/`.
 | `PAPERTREE_PAPERLESS_URL` | `http://localhost:8000` | wohin PaperTree intern greift |
 | `PAPERTREE_PAPERLESS_PUBLIC_URL` | leer | wie Paperless für den Browser erreichbar ist |
 | `PAPERTREE_BASE_PATH` | `papertree` | nginx-Pfad |
+| `PAPERLESS_NETZ` | `paperless_default` | Docker-Netz des Paperless-Stacks |
+| `PAPERTREE_PORT` | `8080` | Port auf `127.0.0.1` |
 | `PAPERTREE_DB` | `/data/papertree.sqlite3` | die Datenbank mit dem Baum |
 | `PAPERTREE_LOGO_DIR` | neben der Datenbank | Ablage der Korrespondenten-Logos |
 | `PAPERTREE_LOGO_MAX_BYTES` | `1048576` | Obergrenze je Logo |

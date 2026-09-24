@@ -22,3 +22,7 @@ __pycache__/
 *_paperless*.json
 *_uebertrag*.json
 sicherungen/
+
+# Die Einrichtung einer Installation gehört nicht ins Repo.
+deploy/.env
+deploy/.env.vorher
