@@ -1,0 +1,16 @@
+PaperTree
+Copyright 2026 Sascha Sommer
+
+Dieses Werk steht unter der Apache-Lizenz 2.0, siehe LICENSE.
+
+Mitgeliefert werden folgende Fremdbibliotheken, jede unter ihrer eigenen
+Lizenz. Sie liegen unverändert unter web/vendor/, die Lizenztexte daneben:
+
+  pdf.js 6.3.289   – Apache-2.0 – Copyright Mozilla Foundation
+                     web/vendor/LICENSE-pdfjs.txt
+  Popper 2.11.8    – MIT        – Copyright Federico Zivolo und Mitwirkende
+                     web/vendor/LICENSE-popper.txt
+  Lucide 1.47.0    – ISC        – Copyright Lucide Contributors
+                     web/vendor/lucide/LICENSE
+
+Einzelheiten zur Herkunft stehen in web/vendor/HERKUNFT.md.

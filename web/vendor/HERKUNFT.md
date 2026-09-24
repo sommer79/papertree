@@ -9,9 +9,12 @@ Browser braucht, liegt hier – unverändert, in der jeweils genannten Fassung.
 | `popper.min.js` | [Popper](https://popper.js.org/) | 2.11.8 | MIT |
 | `lucide/symbole.js` | [Lucide](https://lucide.dev/) | lucide-static 1.47.0 | ISC |
 
-Der Lizenztext von Lucide liegt unter `lucide/LICENSE` bei. Die Lizenzen von
-pdf.js und Popper stehen in den jeweiligen Projekten; die Dateien selbst
-tragen ihren Lizenzhinweis im Kopf.
+Jeder Lizenztext liegt bei – das verlangen Apache-2.0 und MIT bei
+Weitergabe:
+
+- `LICENSE-pdfjs.txt`
+- `LICENSE-popper.txt`
+- `lucide/LICENSE`
 
 `lucide/symbole.js` ist kein Original, sondern aus dem Paket `lucide-static`
 erzeugt: gespeichert ist nur das Innere jedes `<svg>`, weil Grösse,

@@ -206,3 +206,17 @@ Aus der Installation ausgelesen, nicht geraten:
   `title_search` und `more_like_id`. Paperless lässt genau einen davon je
   Abfrage zu, wendet die übrigen Filter aber davor an – `filters.verschmelzen`
   hält sich daran.
+
+## Lizenz
+
+Apache-Lizenz 2.0, siehe [LICENSE](LICENSE). Sie erlaubt Gebrauch, Änderung
+und Weitergabe, auch gewerblich, und schliesst eine ausdrückliche
+Patentlizenz ein.
+
+PaperTree spricht Paperless-ngx nur über dessen HTTP-Schnittstelle an und
+bindet keinen Code daraus ein. Die GPL von Paperless erstreckt sich deshalb
+nicht auf dieses Projekt.
+
+Die mitgelieferten Bibliotheken unter `web/vendor/` behalten ihre eigenen
+Lizenzen; welche das sind und wo die Texte liegen, steht in
+[NOTICE](NOTICE) und in [web/vendor/HERKUNFT.md](web/vendor/HERKUNFT.md).
