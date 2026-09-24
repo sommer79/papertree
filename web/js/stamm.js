@@ -1,6 +1,7 @@
 // Stammdaten aus Paperless. Der Editor baut sich daraus selbst auf (F2.1):
 // ein neuer Tag oder ein neues Zusatzfeld erscheint ohne Änderung am Code.
 import { api } from './api.js';
+import { sprache } from './sprache.js';
 
 const ARTEN = ['tags', 'correspondents', 'document_types', 'storage_paths', 'custom_fields'];
 
@@ -15,7 +16,10 @@ export async function stammLaden(neu = false) {
   const ergebnisse = await Promise.all(ARTEN.map((a) => api.stammdaten(a)));
   ARTEN.forEach((art, n) => {
     const liste = (ergebnisse[n] && ergebnisse[n].ergebnisse) || [];
-    liste.sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'de'));
+    // Sortiert wird in der Sprache des Benutzers: im Spanischen steht das
+    // ñ hinter dem n, im Deutschen zählt das ä wie ein a.
+    liste.sort((a, b) =>
+      String(a.name || '').localeCompare(String(b.name || ''), sprache()));
     stamm[art] = liste;
     stamm.nachId[art] = Object.fromEntries(liste.map((e) => [String(e.id), e]));
   });

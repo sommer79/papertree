@@ -38,6 +38,9 @@ Quelldateien verweisen darauf.
   „In Paperless öffnen"
 - Volltextsuche global und innerhalb eines Ordners
 - Dashboard mit den Ordnern, die man dort haben will
+- Fünf Sprachen – Deutsch, Englisch, Französisch, Italienisch und Spanisch –
+  aus den Einstellungen des Benutzers in Paperless; alles andere bekommt
+  Englisch
 - Bedienbar auf dem Handy
 
 Bewusst nicht enthalten: jede Änderung an Paperless-Daten, die Anzeige, in
@@ -66,6 +69,12 @@ Paperless nicht nach. Ein neuer Filter in Paperless funktioniert damit sofort.
 **Ein Baum je Benutzer (A7).** Jede Abfrage der Datenbank nennt die
 Benutzerkennung.
 
+**Die Sprache steht an einer Stelle.** PaperTree hat keine eigene
+Spracheinstellung: es spricht die Sprache, die in Paperless gewählt ist, und
+schreibt das Datum mit der dort eingestellten Datumssprache. Zwei
+Einstellungen für dieselbe Sache laufen auseinander, und niemand sucht sie an
+zwei Orten. Eine Sprache, die PaperTree nicht hat, bekommt Englisch.
+
 ## Aufbau
 
 ```
@@ -77,7 +86,8 @@ app/paperless.py    Der lesende Zugang – Whitelist und Cookie-Durchleitung
 app/db.py           SQLite: nur der Baum, mit Schema-Wandlungen
 app/main.py         HTTP-Schnittstelle und Auslieferung
 web/                Oberfläche, ES-Module ohne Build-Kette
-tests/              65 Prüfungen, ohne Paperless und ohne Netz
+web/sprachen/       Je Sprache ein Katalog, schlichtes JSON
+tests/              74 Prüfungen, ohne Paperless und ohne Netz
 ```
 
 Eine dynamische Gruppe ist am Ende nur ein weiterer Filtersatz. Darum
@@ -204,7 +214,22 @@ python -m unittest discover -s tests
 
 Die Prüfungen laufen ohne Paperless: `tests/test_kern.py` prüft Filtermodell
 und Baumlogik, `tests/test_ausfuehrung.py` das Zusammenführen über IDs gegen
-eine Attrappe.
+eine Attrappe, und `tests/test_sprachen.py`, dass jeder Schlüssel, den die
+Oberfläche anfragt, in allen fünf Sprachen steht – mit denselben Platzhaltern.
+
+### Eine Sprache hinzufügen
+
+1. `web/sprachen/en.json` nach `<kürzel>.json` kopieren und die Werte
+   übersetzen. Die Schlüssel bleiben, wie sie sind – sie sind die Abmachung
+   mit dem Code.
+2. Das Kürzel in `SPRACHEN` eintragen, in `web/js/sprache.js` und in
+   `app/sprache.py`.
+3. Die Prüfungen laufen lassen. Sie nennen, was noch fehlt.
+
+Die Einträge `thema.*.woerter` sind Suchwörter für den Symbolwähler, keine
+Übersetzung: dort gehören die Wörter hin, die in dieser Sprache wirklich
+eingegeben werden. Ein Thema wird über seinen Namen oder eines dieser Wörter
+gefunden.
 
 ## Getroffene Annahmen über Paperless 3.1.3
 

@@ -1,6 +1,7 @@
 // Dokumentansicht mit eingebautem PDF-Betrachter (F5.2–F5.5). Nur lesend.
 import { api } from './api.js';
-import { datum, markeChip } from './liste.js';
+import { markeChip } from './liste.js';
+import { datum, t } from './sprache.js';
 import { pdfZeigen, selbstRendern } from './pdf.js';
 import { stamm } from './stamm.js';
 import { korrespondentLogo } from './darstellung.js';
@@ -31,7 +32,7 @@ function zusatzfeldWert(eintrag) {
       .find((o) => String(o.id) === String(wert));
     wert = option ? option.label : wert;
   } else if (feld.data_type === 'boolean') {
-    wert = wert ? 'ja' : 'nein';
+    wert = t(wert ? 'allgemein.ja' : 'allgemein.nein');
   } else if (feld.data_type === 'date') {
     wert = datum(wert);
   } else if (feld.data_type === 'monetary') {
@@ -51,7 +52,7 @@ export async function detailZeichnen(dokumentId) {
   // haftend: Titel und die beiden Knöpfe bleiben beim Scrollen sichtbar.
   kopf.className = 'titelzeile haftend';
   const titel = document.createElement('h1');
-  titel.textContent = dok.title || '(ohne Titel)';
+  titel.textContent = dok.title || t('liste.ohneTitel');
   const werkzeuge = document.createElement('div');
   werkzeuge.className = 'werkzeuge';
 
@@ -60,13 +61,13 @@ export async function detailZeichnen(dokumentId) {
   inPaperless.href = dok.paperless_link || '#';
   inPaperless.target = '_blank';
   inPaperless.rel = 'noopener';
-  inPaperless.textContent = 'In Paperless öffnen';
-  inPaperless.title = 'PaperTree ist nur lesend – Änderungen macht Paperless.';
+  inPaperless.textContent = t('allgemein.inPaperless');
+  inPaperless.title = t('detail.nurLesend');
 
   const herunterladen = document.createElement('a');
   herunterladen.className = 'knopf';
   herunterladen.href = api.dateiUrl(dok.id);
-  herunterladen.textContent = 'Original herunterladen';
+  herunterladen.textContent = t('detail.herunterladen');
 
   werkzeuge.append(herunterladen, inPaperless);
   kopf.append(titel, werkzeuge);
@@ -87,7 +88,7 @@ export async function detailZeichnen(dokumentId) {
   } else {
     const rahmen = document.createElement('iframe');
     rahmen.src = api.vorschauUrl(dok.id);
-    rahmen.title = 'Vorschau von ' + (dok.title || dok.id);
+    rahmen.title = t('detail.vorschauVon', { titel: dok.title || dok.id });
     betrachter.append(rahmen);
   }
 
@@ -112,20 +113,20 @@ export async function detailZeichnen(dokumentId) {
   const liste = document.createElement('dl');
 
   const eintraege = [
-    ['Korrespondent', name('correspondents', dok.correspondent)],
-    ['Dokumenttyp', name('document_types', dok.document_type)],
-    ['Speicherpfad', name('storage_paths', dok.storage_path)],
-    ['Erstellt', datum(dok.created_date || dok.created)],
-    ['Hinzugefügt', datum(dok.added)],
-    ['Seiten', dok.page_count],
-    ['Archivnummer', dok.archive_serial_number],
-    ['Originaldatei', dok.original_file_name],
+    ['detail.korrespondent', name('correspondents', dok.correspondent)],
+    ['detail.dokumenttyp', name('document_types', dok.document_type)],
+    ['detail.speicherpfad', name('storage_paths', dok.storage_path)],
+    ['detail.erstellt', datum(dok.created_date || dok.created)],
+    ['detail.hinzugefuegt', datum(dok.added)],
+    ['detail.seiten', dok.page_count],
+    ['detail.archivnummer', dok.archive_serial_number],
+    ['detail.originaldatei', dok.original_file_name],
   ];
 
-  for (const [bezeichnung, wert] of eintraege) {
+  for (const [schluessel, wert] of eintraege) {
     if (wert == null || wert === '') continue;
     const dt = document.createElement('dt');
-    dt.textContent = bezeichnung;
+    dt.textContent = t(schluessel);
     const dd = document.createElement('dd');
     dd.textContent = String(wert);
     liste.append(dt, dd);
@@ -133,7 +134,7 @@ export async function detailZeichnen(dokumentId) {
 
   if ((dok.tags || []).length) {
     const dt = document.createElement('dt');
-    dt.textContent = 'Tags';
+    dt.textContent = t('detail.tags');
     const dd = document.createElement('dd');
     const marken = document.createElement('span');
     marken.className = 'marken';
@@ -160,7 +161,7 @@ export async function detailZeichnen(dokumentId) {
     const alle = notizen.ergebnisse || [];
     if (alle.length) {
       const dt = document.createElement('dt');
-      dt.textContent = 'Notizen';
+      dt.textContent = t('detail.notizen');
       liste.append(dt);
       for (const notiz of alle) {
         const dd = document.createElement('dd');

@@ -11,6 +11,7 @@ import {
 } from './darstellung.js';
 import { symboleLaden, symbolSvg } from './symbole.js';
 import { symbolWaehlen } from './symbolwahl.js';
+import { t } from './sprache.js';
 
 function filterfeld(platzhalter, beiEingabe) {
   const feld = document.createElement('input');
@@ -36,12 +37,10 @@ function tagsAbschnitt() {
   const kopf = document.createElement('div');
   kopf.className = 'einstellungskopf';
   const titel = document.createElement('h2');
-  titel.textContent = 'Tags';
+  titel.textContent = t('einstellungen.tags');
   const erklaerung = document.createElement('p');
   erklaerung.className = 'hinweis';
-  erklaerung.textContent =
-    'Ein Symbol tritt in den Listen an die Stelle der Kurzform des Namens. '
-    + 'Es gilt nur in PaperTree; in Paperless ändert sich nichts.';
+  erklaerung.textContent = t('einstellungen.tagsErklaerung');
   kopf.append(titel, erklaerung);
 
   const rueckmeldung = document.createElement('p');
@@ -57,14 +56,15 @@ function tagsAbschnitt() {
     if (!treffer.length) {
       const leer = document.createElement('p');
       leer.className = 'hinweis';
-      leer.textContent = 'Kein Tag gefunden.';
+      leer.textContent = t('einstellungen.keinTag');
       tabelle.append(leer);
       return;
     }
     for (const tag of treffer) tabelle.append(tagZeile(tag, rueckmeldung));
   };
 
-  karte.append(kopf, filterfeld('Tag suchen …', zeichnen), tabelle, rueckmeldung);
+  karte.append(kopf, filterfeld(t('einstellungen.tagSuchen'), zeichnen), tabelle,
+               rueckmeldung);
   zeichnen();
   return karte;
 }
@@ -87,12 +87,12 @@ function tagZeile(tag, rueckmeldung) {
   const waehlen = document.createElement('button');
   waehlen.type = 'button';
   waehlen.className = 'knopf klein';
-  waehlen.textContent = 'Symbol wählen';
+  waehlen.textContent = t('einstellungen.symbolWaehlen');
 
   const weg = document.createElement('button');
   weg.type = 'button';
   weg.className = 'knopf klein gefahr';
-  weg.textContent = 'Entfernen';
+  weg.textContent = t('einstellungen.entfernen');
 
   const zeigen = () => {
     const symbol = tagSymbol(tag.id);
@@ -106,7 +106,7 @@ function tagZeile(tag, rueckmeldung) {
       kurz.className = 'zuordnung-kurz';
       kurz.textContent = String(tag.name || '').slice(0, 5);
       vorschau.append(kurz);
-      vorschau.title = 'Kein Symbol – in der Liste steht die Kurzform';
+      vorschau.title = t('einstellungen.keinSymbol');
     }
     weg.disabled = !symbol;
   };
@@ -117,16 +117,17 @@ function tagZeile(tag, rueckmeldung) {
       tagSymbolMerken(tag.id, ergebnis.symbol);
       zeigen();
       meldung(rueckmeldung, ergebnis.symbol
-        ? `${tag.name}: Symbol ${ergebnis.symbol} gesetzt.`
-        : `${tag.name}: Symbol entfernt.`);
+        ? t('einstellungen.symbolGesetzt', { name: tag.name, symbol: ergebnis.symbol })
+        : t('einstellungen.symbolWeg', { name: tag.name }));
     } catch (fehler) {
-      meldung(rueckmeldung, 'Nicht gespeichert: ' + (fehler.message || fehler), true);
+      meldung(rueckmeldung,
+              t('einstellungen.nichtGespeichert', { grund: fehler.message || fehler }), true);
     }
   };
 
   waehlen.addEventListener('click', () => {
     symbolWaehlen(tagSymbol(tag.id), (symbol) => speichern(symbol),
-                  { name: tag.name || '#' + tag.id, art: 'Tag' });
+                  { name: tag.name || '#' + tag.id, art: t('art.tag') });
   });
   weg.addEventListener('click', () => speichern(''));
 
@@ -149,12 +150,10 @@ function korrespondentenAbschnitt() {
   const kopf = document.createElement('div');
   kopf.className = 'einstellungskopf';
   const titel = document.createElement('h2');
-  titel.textContent = 'Korrespondenten';
+  titel.textContent = t('einstellungen.korrespondenten');
   const erklaerung = document.createElement('p');
   erklaerung.className = 'hinweis';
-  erklaerung.textContent =
-    'Das Logo erscheint klein vor dem Namen in den Listen und gross in der '
-    + 'Ecke der Dokumentansicht. PNG, JPEG, GIF, WEBP oder SVG, höchstens 1 MB.';
+  erklaerung.textContent = t('einstellungen.logoErklaerung');
   kopf.append(titel, erklaerung);
 
   const rueckmeldung = document.createElement('p');
@@ -170,15 +169,15 @@ function korrespondentenAbschnitt() {
     if (!treffer.length) {
       const leer = document.createElement('p');
       leer.className = 'hinweis';
-      leer.textContent = 'Kein Korrespondent gefunden.';
+      leer.textContent = t('einstellungen.keinKorrespondent');
       tabelle.append(leer);
       return;
     }
     for (const eintrag of treffer) tabelle.append(logoZeile(eintrag, rueckmeldung));
   };
 
-  karte.append(kopf, filterfeld('Korrespondent suchen …', zeichnen), tabelle,
-               rueckmeldung);
+  karte.append(kopf, filterfeld(t('einstellungen.korrespondentSuchen'), zeichnen),
+               tabelle, rueckmeldung);
   zeichnen();
   return karte;
 }
@@ -202,12 +201,12 @@ function logoZeile(korrespondent, rueckmeldung) {
   const waehlen = document.createElement('button');
   waehlen.type = 'button';
   waehlen.className = 'knopf klein';
-  waehlen.textContent = 'Logo wählen';
+  waehlen.textContent = t('einstellungen.logoWaehlen');
 
   const weg = document.createElement('button');
   weg.type = 'button';
   weg.className = 'knopf klein gefahr';
-  weg.textContent = 'Entfernen';
+  weg.textContent = t('einstellungen.entfernen');
 
   const zeigen = () => {
     const url = korrespondentLogo(korrespondent.id);
@@ -234,7 +233,7 @@ function logoZeile(korrespondent, rueckmeldung) {
       const ergebnis = await api.logoHochladen(korrespondent.id, datei);
       logoMerken(korrespondent.id, ergebnis.logo);
       zeigen();
-      meldung(rueckmeldung, `${korrespondent.name}: Logo gesetzt.`);
+      meldung(rueckmeldung, t('einstellungen.logoGesetzt', { name: korrespondent.name }));
     } catch (fehler) {
       const text = (fehler.daten && fehler.daten.fehler) || fehler.message || fehler;
       meldung(rueckmeldung, `${korrespondent.name}: ${text}`, true);
@@ -249,9 +248,10 @@ function logoZeile(korrespondent, rueckmeldung) {
       await api.logoLoeschen(korrespondent.id);
       logoMerken(korrespondent.id, '');
       zeigen();
-      meldung(rueckmeldung, `${korrespondent.name}: Logo entfernt.`);
+      meldung(rueckmeldung, t('einstellungen.logoWeg', { name: korrespondent.name }));
     } catch (fehler) {
-      meldung(rueckmeldung, 'Nicht entfernt: ' + (fehler.message || fehler), true);
+      meldung(rueckmeldung,
+              t('einstellungen.nichtEntfernt', { grund: fehler.message || fehler }), true);
     }
   });
 
@@ -271,7 +271,7 @@ export async function einstellungenZeichnen() {
   const kopf = document.createElement('div');
   kopf.className = 'titelzeile haftend';
   const titel = document.createElement('h1');
-  titel.textContent = 'Einstellungen';
+  titel.textContent = t('kopf.einstellungen');
   kopf.append(titel);
   huelle.append(kopf);
 

@@ -17,6 +17,7 @@ import re
 import httpx
 
 from .config import einstellungen
+from .sprache import aus_einstellungen
 
 # --- Whitelist ---------------------------------------------------------------
 # Jeder Pfad, den PaperTree überhaupt anfragen darf. Alles andere wird
@@ -137,9 +138,15 @@ class Zugang:
         person = (daten or {}).get("user") or {}
         if not person.get("id"):
             raise NichtAngemeldet(401, "Keine Benutzerkennung in ui_settings")
+        # Wie Paperless mit diesem Benutzer spricht - PaperTree spricht
+        # dieselbe Sprache, statt eine eigene Einstellung zu verlangen.
+        gewaehlt = aus_einstellungen((daten or {}).get("settings"))
         return {
             "id": person["id"],
             "name": person.get("username") or "",
+            # Leer heisst: keine Angabe, dann entscheidet der Browser.
+            "sprache": gewaehlt["sprache"],
+            "datumssprache": gewaehlt["datumssprache"],
             # Paperless nennt in ui_settings, wer Vollzugriff hat. PaperTree
             # braucht das nur, um den Einstellungsbereich freizugeben; die
             # Rechte an den Dokumenten prüft weiterhin Paperless selbst.

@@ -6,110 +6,111 @@
 // Zusatzfeld-Abfrage aus einem Paperless-Link – bleibt als Rohparameter
 // erhalten und geht nicht verloren.
 import { stamm } from './stamm.js';
+import { t } from './sprache.js';
 
 // --- Feste Arten -------------------------------------------------------------
 export const STATISCHE_ARTEN = [
   {
-    art: 'tags', name: 'Tags', typ: 'mehrfach', quelle: 'tags',
+    art: 'tags', name: 'art.tags', typ: 'mehrfach', quelle: 'tags',
     ops: [
-      { op: 'alle', name: 'hat alle von', param: 'tags__id__all' },
-      { op: 'eines', name: 'hat eines von', param: 'tags__id__in' },
-      { op: 'keines', name: 'hat keines von', param: 'tags__id__none' },
+      { op: 'alle', name: 'op.hatAlle', param: 'tags__id__all' },
+      { op: 'eines', name: 'op.hatEines', param: 'tags__id__in' },
+      { op: 'keines', name: 'op.hatKeines', param: 'tags__id__none' },
     ],
   },
   {
-    art: 'getaggt', name: 'Tags vorhanden', typ: 'jaNein',
-    ops: [{ op: 'ist', name: 'ist', param: 'is_tagged' }],
+    art: 'getaggt', name: 'art.getaggt', typ: 'jaNein',
+    ops: [{ op: 'ist', name: 'op.ist', param: 'is_tagged' }],
   },
   {
-    art: 'korrespondent', name: 'Korrespondent', typ: 'mehrfach', quelle: 'correspondents',
+    art: 'korrespondent', name: 'art.korrespondent', typ: 'mehrfach', quelle: 'correspondents',
     ops: [
-      { op: 'eines', name: 'ist eines von', param: 'correspondent__id__in' },
-      { op: 'keines', name: 'ist keines von', param: 'correspondent__id__none' },
+      { op: 'eines', name: 'op.istEinesVon', param: 'correspondent__id__in' },
+      { op: 'keines', name: 'op.istKeinesVon', param: 'correspondent__id__none' },
     ],
   },
   {
-    art: 'ohne_korrespondent', name: 'Korrespondent leer', typ: 'jaNein',
-    ops: [{ op: 'ist', name: 'ist', param: 'correspondent__isnull' }],
+    art: 'ohne_korrespondent', name: 'art.korrespondentLeer', typ: 'jaNein',
+    ops: [{ op: 'ist', name: 'op.ist', param: 'correspondent__isnull' }],
   },
   {
-    art: 'dokumenttyp', name: 'Dokumenttyp', typ: 'mehrfach', quelle: 'document_types',
+    art: 'dokumenttyp', name: 'art.dokumenttyp', typ: 'mehrfach', quelle: 'document_types',
     ops: [
-      { op: 'eines', name: 'ist eines von', param: 'document_type__id__in' },
-      { op: 'keines', name: 'ist keines von', param: 'document_type__id__none' },
+      { op: 'eines', name: 'op.istEinesVon', param: 'document_type__id__in' },
+      { op: 'keines', name: 'op.istKeinesVon', param: 'document_type__id__none' },
     ],
   },
   {
-    art: 'ohne_dokumenttyp', name: 'Dokumenttyp leer', typ: 'jaNein',
-    ops: [{ op: 'ist', name: 'ist', param: 'document_type__isnull' }],
+    art: 'ohne_dokumenttyp', name: 'art.dokumenttypLeer', typ: 'jaNein',
+    ops: [{ op: 'ist', name: 'op.ist', param: 'document_type__isnull' }],
   },
   {
-    art: 'speicherpfad', name: 'Speicherpfad', typ: 'mehrfach', quelle: 'storage_paths',
+    art: 'speicherpfad', name: 'art.speicherpfad', typ: 'mehrfach', quelle: 'storage_paths',
     ops: [
-      { op: 'eines', name: 'ist eines von', param: 'storage_path__id__in' },
-      { op: 'keines', name: 'ist keines von', param: 'storage_path__id__none' },
+      { op: 'eines', name: 'op.istEinesVon', param: 'storage_path__id__in' },
+      { op: 'keines', name: 'op.istKeinesVon', param: 'storage_path__id__none' },
     ],
   },
   {
-    art: 'titel', name: 'Titel', typ: 'text',
+    art: 'titel', name: 'art.titel', typ: 'text',
     ops: [
-      { op: 'enthaelt', name: 'enthält', param: 'title__icontains' },
-      { op: 'beginnt', name: 'beginnt mit', param: 'title__istartswith' },
-      { op: 'genau', name: 'ist genau', param: 'title__iexact' },
+      { op: 'enthaelt', name: 'op.enthaelt', param: 'title__icontains' },
+      { op: 'beginnt', name: 'op.beginntMit', param: 'title__istartswith' },
+      { op: 'genau', name: 'op.istGenau', param: 'title__iexact' },
     ],
   },
   {
-    art: 'inhalt', name: 'Inhalt (OCR)', typ: 'text',
-    ops: [{ op: 'enthaelt', name: 'enthält', param: 'content__icontains' }],
+    art: 'inhalt', name: 'art.inhalt', typ: 'text',
+    ops: [{ op: 'enthaelt', name: 'op.enthaelt', param: 'content__icontains' }],
   },
   {
-    art: 'volltext', name: 'Volltextsuche (Abfrage)', typ: 'text',
-    ops: [{ op: 'ist', name: 'nach', param: 'query' }],
+    art: 'volltext', name: 'art.volltext', typ: 'text',
+    ops: [{ op: 'ist', name: 'op.nach', param: 'query' }],
   },
   {
-    art: 'einfachsuche', name: 'Volltextsuche (einfach)', typ: 'text',
-    ops: [{ op: 'ist', name: 'nach', param: 'text' }],
+    art: 'einfachsuche', name: 'art.einfachsuche', typ: 'text',
+    ops: [{ op: 'ist', name: 'op.nach', param: 'text' }],
   },
   {
-    art: 'titelsuche', name: 'Titelsuche', typ: 'text',
-    ops: [{ op: 'ist', name: 'nach', param: 'title_search' }],
+    art: 'titelsuche', name: 'art.titelsuche', typ: 'text',
+    ops: [{ op: 'ist', name: 'op.nach', param: 'title_search' }],
   },
   {
-    art: 'dateiname', name: 'Originaldateiname', typ: 'text',
+    art: 'dateiname', name: 'art.dateiname', typ: 'text',
     ops: [
-      { op: 'enthaelt', name: 'enthält', param: 'original_filename__icontains' },
-      { op: 'beginnt', name: 'beginnt mit', param: 'original_filename__istartswith' },
+      { op: 'enthaelt', name: 'op.enthaelt', param: 'original_filename__icontains' },
+      { op: 'beginnt', name: 'op.beginntMit', param: 'original_filename__istartswith' },
     ],
   },
   {
-    art: 'erstellt', name: 'Erstellt am', typ: 'datum',
+    art: 'erstellt', name: 'art.erstellt', typ: 'datum',
     ops: [
-      { op: 'ab', name: 'ab', param: 'created__date__gte' },
-      { op: 'bis', name: 'bis', param: 'created__date__lte' },
+      { op: 'ab', name: 'op.ab', param: 'created__date__gte' },
+      { op: 'bis', name: 'op.bis', param: 'created__date__lte' },
     ],
   },
   {
-    art: 'erstellt_jahr', name: 'Erstellt – Jahr', typ: 'zahl',
-    ops: [{ op: 'ist', name: 'ist', param: 'created__year' }],
+    art: 'erstellt_jahr', name: 'art.erstelltJahr', typ: 'zahl',
+    ops: [{ op: 'ist', name: 'op.ist', param: 'created__year' }],
   },
   {
-    art: 'erstellt_monat', name: 'Erstellt – Monat', typ: 'zahl',
-    ops: [{ op: 'ist', name: 'ist', param: 'created__month' }],
+    art: 'erstellt_monat', name: 'art.erstelltMonat', typ: 'zahl',
+    ops: [{ op: 'ist', name: 'op.ist', param: 'created__month' }],
   },
   {
-    art: 'hinzugefuegt', name: 'Hinzugefügt am', typ: 'datum',
+    art: 'hinzugefuegt', name: 'art.hinzugefuegt', typ: 'datum',
     ops: [
-      { op: 'ab', name: 'ab', param: 'added__date__gte' },
-      { op: 'bis', name: 'bis', param: 'added__date__lte' },
+      { op: 'ab', name: 'op.ab', param: 'added__date__gte' },
+      { op: 'bis', name: 'op.bis', param: 'added__date__lte' },
     ],
   },
   {
-    art: 'posteingang', name: 'Im Posteingang', typ: 'jaNein',
-    ops: [{ op: 'ist', name: 'ist', param: 'is_in_inbox' }],
+    art: 'posteingang', name: 'art.posteingang', typ: 'jaNein',
+    ops: [{ op: 'ist', name: 'op.ist', param: 'is_in_inbox' }],
   },
   {
-    art: 'hat_zusatzfelder', name: 'Zusatzfelder vorhanden', typ: 'jaNein',
-    ops: [{ op: 'ist', name: 'ist', param: 'has_custom_fields' }],
+    art: 'hat_zusatzfelder', name: 'art.hatZusatzfelder', typ: 'jaNein',
+    ops: [{ op: 'ist', name: 'op.ist', param: 'has_custom_fields' }],
   },
 ];
 
@@ -125,27 +126,27 @@ export const STATISCHE_ARTEN = [
 // nicht gesetzt ist. Wer das ausschliessen will, nimmt zusätzlich
 // "ist gesetzt = ja".
 const OPS_BASIS = [
-  { op: 'exact', name: 'ist' },
-  { op: 'nicht', name: 'ist nicht' },
-  { op: 'in', name: 'ist eines von' },
-  { op: 'nicht_in', name: 'ist keines von' },
-  { op: 'exists', name: 'ist gesetzt' },
+  { op: 'exact', name: 'op.ist' },
+  { op: 'nicht', name: 'op.istNicht' },
+  { op: 'in', name: 'op.istEinesVon' },
+  { op: 'nicht_in', name: 'op.istKeinesVon' },
+  { op: 'exists', name: 'op.istGesetzt' },
 ];
 
 // Verneinter Operator -> Operator im Atom, und der Weg zurück.
 const VERNEINT_ZU = { nicht: 'exact', nicht_in: 'in' };
 const VERNEINT_VON = { exact: 'nicht', in: 'nicht_in' };
 const OPS_TEXT = [
-  { op: 'icontains', name: 'enthält' },
-  { op: 'istartswith', name: 'beginnt mit' },
-  { op: 'iendswith', name: 'endet mit' },
+  { op: 'icontains', name: 'op.enthaelt' },
+  { op: 'istartswith', name: 'op.beginntMit' },
+  { op: 'iendswith', name: 'op.endetMit' },
 ];
 const OPS_RECHNEN = [
-  { op: 'gt', name: 'grösser als' },
-  { op: 'gte', name: 'grösser oder gleich' },
-  { op: 'lt', name: 'kleiner als' },
-  { op: 'lte', name: 'kleiner oder gleich' },
-  { op: 'range', name: 'zwischen' },
+  { op: 'gt', name: 'op.groesser' },
+  { op: 'gte', name: 'op.groesserGleich' },
+  { op: 'lt', name: 'op.kleiner' },
+  { op: 'lte', name: 'op.kleinerGleich' },
+  { op: 'range', name: 'op.zwischen' },
 ];
 
 const ZF_TYPEN = {
@@ -158,7 +159,7 @@ const ZF_TYPEN = {
   float: { typ: 'zahl', ops: [...OPS_BASIS, ...OPS_RECHNEN] },
   monetary: { typ: 'zahl', ops: [...OPS_BASIS, ...OPS_TEXT, ...OPS_RECHNEN] },
   select: { typ: 'optionen', ops: OPS_BASIS },
-  documentlink: { typ: 'zahl', ops: [...OPS_BASIS, { op: 'contains', name: 'enthält' }] },
+  documentlink: { typ: 'zahl', ops: [...OPS_BASIS, { op: 'contains', name: 'op.enthaelt' }] },
 };
 
 export function zusatzfeldArten() {
@@ -166,8 +167,10 @@ export function zusatzfeldArten() {
     const form = ZF_TYPEN[feld.data_type] || ZF_TYPEN.string;
     return {
       art: 'zf:' + feld.id,
+      // Kein Schlüssel, sondern der Name aus Paperless - t() gibt zurück,
+      // was es nicht kennt, also steht hier am Ende genau dieser Name.
       name: feld.name,
-      gruppe: 'Zusatzfelder',
+      gruppe: 'art.zusatzfelder',
       zusatzfeld: feld,
       typ: form.typ,
       optionen: ((feld.extra_data && feld.extra_data.select_options) || []).filter((o) => o.id),
@@ -348,11 +351,11 @@ export function beschreibe(filter) {
         return gefunden ? gefunden.label : id;
       }).join(', ');
     } else if (definition.typ === 'jaNein') {
-      wert = wert ? 'ja' : 'nein';
+      wert = t(wert ? 'allgemein.ja' : 'allgemein.nein');
     } else if (Array.isArray(wert)) {
       wert = wert.join(' – ');
     }
-    return definition.name + ' ' + op.name + ' ' + wert;
+    return t(definition.name) + ' ' + t(op.name) + ' ' + wert;
   }).filter(Boolean);
 
   for (const param of Object.keys(roh)) teile.push(param);

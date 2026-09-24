@@ -8,9 +8,8 @@ Status: **stages 1 and 2 implemented** (version 0.2.0). The requirements live
 in the document "PaperTree – Anforderungen"; the markers A1–A7, F1–F9 and
 N1–N6 in the source files refer to it.
 
-*Deutsche Fassung: [README.de.md](README.de.md). The code, comments and
-command-line flags are German — this file is the translation, not a separate
-project.*
+*Deutsche Fassung: [README.de.md](README.de.md). The interface itself speaks
+five languages; the code, comments and command-line flags are German.*
 
 ## What PaperTree does
 
@@ -38,6 +37,8 @@ project.*
   button
 - Full-text search, globally and within a folder
 - A dashboard with the folders you want on it
+- Five languages – German, English, French, Italian and Spanish – taken
+  from the user's own Paperless settings, with English for anything else
 - Usable on a phone
 
 Deliberately absent: any change to Paperless data, showing which other
@@ -65,6 +66,12 @@ immediately.
 
 **One tree per user (A7).** Every database query names the user ID.
 
+**One place for the language.** PaperTree has no language setting of its
+own: it speaks the language chosen in Paperless, and writes dates with the
+date locale set there. Two settings for the same thing drift apart, and
+nobody looks for them in two places. A language PaperTree does not have
+gets English.
+
 ## Layout
 
 ```
@@ -76,7 +83,8 @@ app/paperless.py    The read-only access - whitelist and cookie pass-through
 app/db.py           SQLite: the tree only, with schema migrations
 app/main.py         HTTP interface and serving
 web/                Interface, ES modules without a build chain
-tests/              65 checks, without Paperless and without a network
+web/sprachen/       One catalogue per language, plain JSON
+tests/              74 checks, without Paperless and without a network
 ```
 
 A dynamic group is, in the end, just another filter set. That is why
@@ -203,7 +211,19 @@ python -m unittest discover -s tests
 
 The tests run without Paperless: `tests/test_kern.py` checks the filter model
 and the tree logic, `tests/test_ausfuehrung.py` the merging via IDs against a
-stub.
+stub, and `tests/test_sprachen.py` that every key the interface asks for
+exists in all five languages, with the same placeholders.
+
+### Adding a language
+
+1. Copy `web/sprachen/en.json` to `<code>.json` and translate the values. The
+   keys stay as they are — they are the contract with the code.
+2. Add the code to `SPRACHEN` in `web/js/sprache.js` and in `app/sprache.py`.
+3. Run the tests. They fail with a list of what is still missing.
+
+The `thema.*.woerter` entries are search keywords for the icon picker, not
+translations: use the words somebody would actually type in that language.
+A theme is found through its name or any of its keywords.
 
 ## Assumptions made about Paperless 3.1.3
 

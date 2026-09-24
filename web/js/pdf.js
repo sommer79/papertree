@@ -8,6 +8,8 @@
 // pdf.js liegt lokal (web/vendor), wird aber erst geladen, wenn es gebraucht
 // wird – am Rechner also gar nicht.
 
+import { t, tn } from './sprache.js';
+
 const PDFJS_PFAD = '../vendor/pdf.min.mjs';
 const WORKER_PFAD = 'vendor/pdf.worker.min.mjs';
 
@@ -51,7 +53,7 @@ async function pdfjsLaden() {
 export async function pdfZeigen(behaelter, url) {
   const meldung = document.createElement('div');
   meldung.className = 'laedt';
-  meldung.textContent = 'Vorschau wird geladen …';
+  meldung.textContent = t('pdf.laedt');
   behaelter.append(meldung);
 
   let ladeauftrag = null;
@@ -71,7 +73,7 @@ export async function pdfZeigen(behaelter, url) {
 
     const leiste = document.createElement('div');
     leiste.className = 'pdf-leiste';
-    leiste.textContent = dokument.numPages === 1 ? '1 Seite' : dokument.numPages + ' Seiten';
+    leiste.textContent = tn('pdf.seiten', dokument.numPages);
     behaelter.append(leiste);
 
     const seiten = document.createElement('div');
@@ -128,8 +130,8 @@ export async function pdfZeigen(behaelter, url) {
     }
   } catch (fehler) {
     meldung.className = 'hinweiskasten fehler';
-    meldung.textContent = 'Die Vorschau liess sich nicht laden: '
-      + (fehler && fehler.message ? fehler.message : fehler);
+    meldung.textContent = t('pdf.fehler', {
+      grund: fehler && fehler.message ? fehler.message : fehler });
   }
 
   return () => {

@@ -6,6 +6,7 @@ import { alleArten, artFinden, ausFilter, beschreibe, nachFilter } from './krite
 import { SORTIERUNGEN } from './liste.js';
 import { symbolInhalt, symboleLaden, symbolSvg } from './symbole.js';
 import { symbolWaehlen } from './symbolwahl.js';
+import { t, tn, zahlText } from './sprache.js';
 
 const d = (id) => document.getElementById(id);
 let zustand = null;
@@ -24,7 +25,7 @@ export function editorVorbereiten(beiAenderung) {
     symbolWaehlen(zustand.knoten.symbol || '', (name) => {
       zustand.knoten.symbol = name;
       symbolknopfZeichnen();
-    }, { name: ordnername || 'diesen Ordner', art: 'Ordner' });
+    }, { name: ordnername || t('editor.dieserOrdner'), art: t('art.ordner') });
   });
   d('editor-form').addEventListener('submit', (ereignis) => ereignis.preventDefault());
 
@@ -34,7 +35,7 @@ export function editorVorbereiten(beiAenderung) {
       dialog.close();
       beiAenderung && beiAenderung(zustand.knoten.id || null);
     } catch (fehler) {
-      meldung(fehler.message || 'Speichern fehlgeschlagen', true);
+      meldung(fehler.message || t('fehler.speichern'), true);
     }
   });
 
@@ -42,8 +43,8 @@ export function editorVorbereiten(beiAenderung) {
     if (!zustand || !zustand.knoten.id) return;
     const wieViele = zustand.kinderZahl;
     const frage = wieViele
-      ? `"${zustand.knoten.name}" und ${wieViele} Unterordner löschen? Die Dokumente in Paperless bleiben unberührt.`
-      : `"${zustand.knoten.name}" löschen? Die Dokumente in Paperless bleiben unberührt.`;
+      ? tn('menue.loeschenMitKindern', wieViele, { name: zustand.knoten.name })
+      : t('menue.loeschenFrage', { name: zustand.knoten.name });
     if (!confirm(frage)) return;
     await api.ordnerLoeschen(zustand.knoten.id);
     dialog.close();
@@ -92,7 +93,7 @@ export function editorVorbereiten(beiAenderung) {
       const ergebnis = await api.ausLink(feld.value.trim());
       const anzahl = Object.keys(ergebnis.filter || {}).length;
       if (!anzahl) {
-        d('e-link-meldung').textContent = 'In diesem Link stand kein Filter.';
+        d('e-link-meldung').textContent = t('editor.linkOhneFilter');
         return;
       }
       const gelesen = ausFilter(ergebnis.filter);
@@ -101,15 +102,15 @@ export function editorVorbereiten(beiAenderung) {
       d('e-eigener').checked = true;
       if (ergebnis.sortierung) d('e-sortierung').value = ergebnis.sortierung;
       const verworfen = (ergebnis.verworfen || []).length
-        ? ' Nicht übernommen: ' + ergebnis.verworfen.join(', ') + '.'
+        ? ' ' + t('import.verworfen', { was: ergebnis.verworfen.join(', ') })
         : '';
-      d('e-link-meldung').textContent = anzahl + ' Kriterien übernommen.' + verworfen;
+      d('e-link-meldung').textContent = tn('editor.linkUebernommen', anzahl) + verworfen;
       feld.value = '';
       modusZeigen();
       kriterienZeichnen();
       vorschauAnstossen();
     } catch (fehler) {
-      d('e-link-meldung').textContent = 'Der Link liess sich nicht lesen.';
+      d('e-link-meldung').textContent = t('editor.linkUnlesbar');
     }
   });
 }
@@ -134,8 +135,8 @@ export async function editorOeffnen({ knoten, elternId, geerbt, kinderZahl }) {
   // Der Name gehört in den Titel: bei mehreren gleich aufgebauten Ordnern
   // ist sonst nicht zu sehen, welchen man gerade offen hat.
   d('editor-titel').textContent = zustand.knoten.id
-    ? 'Ordner bearbeiten: ' + (zustand.knoten.name || '(ohne Namen)')
-    : 'Neuer Ordner';
+    ? t('editor.titelBearbeiten', { name: zustand.knoten.name || t('editor.ohneNamen') })
+    : t('editor.titelNeu');
   d('e-name').value = zustand.knoten.name || '';
   symbolknopfZeichnen();
   d('e-eigener').checked = !!zustand.knoten.eigener_filter;
@@ -166,13 +167,16 @@ function sortierungFuellen(gewaehlt) {
   feld.innerHTML = '';
   const eintraege = [...SORTIERUNGEN];
   for (const zf of stamm.custom_fields || []) {
-    eintraege.push(['custom_field_' + zf.id, 'Zusatzfeld: ' + zf.name]);
-    eintraege.push(['-custom_field_' + zf.id, 'Zusatzfeld: ' + zf.name + ', absteigend']);
+    eintraege.push(['custom_field_' + zf.id, t('editor.sortZusatzfeld', { name: zf.name })]);
+    eintraege.push(['-custom_field_' + zf.id,
+                    t('editor.sortZusatzfeldAb', { name: zf.name })]);
   }
   for (const [wert, name] of eintraege) {
     const option = document.createElement('option');
     option.value = wert;
-    option.textContent = name;
+    // Die festen Sortierungen tragen einen Schlüssel, die Zusatzfelder
+    // ihren fertigen Namen - t() gibt Unbekanntes unverändert zurück.
+    option.textContent = name.startsWith('sortierung.') ? t(name) : name;
     feld.append(option);
   }
   feld.value = gewaehlt;
@@ -188,22 +192,22 @@ function sortierungFuellen(gewaehlt) {
 // Dynamische Unterknoten (F4): die Dimensionen, nach denen aufgespannt
 // werden kann. Zusatzfelder kommen aus den Stammdaten dazu.
 const GRUPPIERUNGEN = [
-  ['', '— keine, Unterordner von Hand —'],
-  ['created_year', 'Jahr (erstellt)'],
-  ['added_year', 'Jahr (hinzugefügt)'],
-  ['correspondent', 'Korrespondent'],
-  ['document_type', 'Dokumenttyp'],
-  ['tag', 'Tag'],
-  ['storage_path', 'Speicherpfad'],
+  ['', 'gruppierung.keine'],
+  ['created_year', 'gruppierung.jahrErstellt'],
+  ['added_year', 'gruppierung.jahrHinzugefuegt'],
+  ['correspondent', 'art.korrespondent'],
+  ['document_type', 'art.dokumenttyp'],
+  ['tag', 'art.tag'],
+  ['storage_path', 'art.speicherpfad'],
 ];
 
 function gruppierungFuellen(gewaehlt) {
   const feld = d('e-gruppieren');
   feld.innerHTML = '';
-  for (const [wert, name] of GRUPPIERUNGEN) {
+  for (const [wert, schluessel] of GRUPPIERUNGEN) {
     const option = document.createElement('option');
     option.value = wert;
-    option.textContent = name;
+    option.textContent = t(schluessel);
     feld.append(option);
   }
   const auswahlfelder = (stamm.custom_fields || []).filter(
@@ -211,7 +215,7 @@ function gruppierungFuellen(gewaehlt) {
   );
   if (auswahlfelder.length) {
     const bereich = document.createElement('optgroup');
-    bereich.label = 'Zusatzfelder';
+    bereich.label = t('art.zusatzfelder');
     for (const zf of auswahlfelder) {
       const option = document.createElement('option');
       option.value = 'cf:' + zf.id;
@@ -229,7 +233,7 @@ function elternFuellen() {
   feld.innerHTML = '';
   const oben = document.createElement('option');
   oben.value = '';
-  oben.textContent = '— oberste Ebene —';
+  oben.textContent = t('editor.obersteEbene');
   feld.append(oben);
 
   // Ein Ordner darf nicht unter sich selbst liegen.
@@ -259,20 +263,24 @@ function elternFuellen() {
 
 function artenFuellen() {
   const feld = d('e-neues-kriterium');
-  feld.innerHTML = '<option value="">Kriterium hinzufügen …</option>';
+  feld.innerHTML = '';
+  const leer = document.createElement('option');
+  leer.value = '';
+  leer.textContent = t('editor.kriteriumNeu');
+  feld.append(leer);
   const gruppen = new Map();
   for (const definition of alleArten()) {
-    const gruppe = definition.gruppe || 'Dokumentfelder';
+    const gruppe = definition.gruppe || 'art.dokumentfelder';
     if (!gruppen.has(gruppe)) gruppen.set(gruppe, []);
     gruppen.get(gruppe).push(definition);
   }
   for (const [name, liste] of gruppen) {
     const bereich = document.createElement('optgroup');
-    bereich.label = name;
+    bereich.label = t(name);
     for (const definition of liste) {
       const option = document.createElement('option');
       option.value = definition.art;
-      option.textContent = definition.name;
+      option.textContent = t(definition.name);
       bereich.append(option);
     }
     feld.append(bereich);
@@ -284,25 +292,26 @@ function modusZeigen() {
   const kinder = d('e-kinder').checked;
   d('e-tief-zeile').style.display = kinder ? '' : 'none';
   d('e-filterteil').style.display = eigener ? '' : 'none';
-  let text;
-  if (!eigener && !kinder) text = 'Reine Navigation: der Ordner zeigt nur seine Unterordner.';
-  else if (!eigener && kinder) text = 'Zeigt die Dokumente der Unterordner, zusammengeführt.';
-  else if (eigener && !kinder) text = 'Zeigt nur die Dokumente des eigenen Filters.';
-  else text = 'Zeigt die eigenen Dokumente und zusätzlich die der Unterordner.';
-  d('e-modus').textContent = text;
+  let schluessel;
+  if (!eigener && !kinder) schluessel = 'editor.modusNavigation';
+  else if (!eigener && kinder) schluessel = 'editor.modusKinder';
+  else if (eigener && !kinder) schluessel = 'editor.modusEigener';
+  else schluessel = 'editor.modusBeides';
+  d('e-modus').textContent = t(schluessel);
 }
 
 function geerbtZeigen() {
   const kasten = d('e-geerbt');
   const eigenstaendig = d('e-eigenstaendig').checked;
   if (!zustand.geerbt.length) {
-    kasten.textContent = 'Kein übergeordneter Filter vorhanden.';
+    kasten.textContent = t('editor.keinGeerbter');
     return;
   }
   const worte = zustand.geerbt.map((satz) => beschreibe(satz)).filter(Boolean).join(' · ');
   kasten.innerHTML = eigenstaendig
-    ? '<s>Geerbt: ' + escape(worte) + '</s> – wird nicht angewendet.'
-    : '<strong>Geerbt:</strong> ' + escape(worte);
+    ? '<s>' + escape(t('editor.geerbt') + ' ' + worte) + '</s> '
+      + escape(t('editor.geerbtAus'))
+    : '<strong>' + escape(t('editor.geerbt')) + '</strong> ' + escape(worte);
 }
 
 function kriterienZeichnen() {
@@ -316,14 +325,14 @@ function kriterienZeichnen() {
     zeile.className = 'kriterium';
 
     const feldName = document.createElement('span');
-    feldName.textContent = definition.name;
+    feldName.textContent = t(definition.name);
     zeile.append(feldName);
 
     const opFeld = document.createElement('select');
     for (const op of definition.ops) {
       const option = document.createElement('option');
       option.value = op.op;
-      option.textContent = op.name;
+      option.textContent = t(op.name);
       opFeld.append(option);
     }
     opFeld.value = kriterium.op;
@@ -340,7 +349,7 @@ function kriterienZeichnen() {
     const weg = document.createElement('button');
     weg.type = 'button';
     weg.className = 'weg';
-    weg.title = 'Kriterium entfernen';
+    weg.title = t('editor.kriteriumWeg');
     weg.textContent = '×';
     weg.addEventListener('click', () => {
       zustand.kriterien.splice(stelle, 1);
@@ -361,7 +370,7 @@ function kriterienZeichnen() {
     anzeige.type = 'text';
     anzeige.value = wert;
     anzeige.readOnly = true;
-    anzeige.title = 'Aus einem Link übernommen und hier nicht bearbeitbar.';
+    anzeige.title = t('editor.rohHinweis');
     const weg = document.createElement('button');
     weg.type = 'button';
     weg.className = 'weg';
@@ -378,7 +387,7 @@ function kriterienZeichnen() {
   if (!zustand.kriterien.length && !Object.keys(zustand.roh).length) {
     const leer = document.createElement('p');
     leer.className = 'hinweis';
-    leer.textContent = 'Noch kein Kriterium – der Ordner würde alle Dokumente zeigen.';
+    leer.textContent = t('editor.keinKriterium');
     behaelter.append(leer);
   }
 }
@@ -386,10 +395,10 @@ function kriterienZeichnen() {
 function wertFeld(definition, kriterium) {
   if (kriterium.op === 'exists' || definition.typ === 'jaNein') {
     const feld = document.createElement('select');
-    for (const [wert, name] of [['true', 'ja'], ['false', 'nein']]) {
+    for (const [wert, schluessel] of [['true', 'allgemein.ja'], ['false', 'allgemein.nein']]) {
       const option = document.createElement('option');
       option.value = wert;
-      option.textContent = name;
+      option.textContent = t(schluessel);
       feld.append(option);
     }
     feld.value = kriterium.wert ? 'true' : 'false';
@@ -457,18 +466,18 @@ function vorschauAnstossen() {
   clearTimeout(vorschauZeitgeber);
   const anzeige = d('e-treffer');
   if (!d('e-eigener').checked) { anzeige.textContent = ''; return; }
-  anzeige.textContent = 'zähle …';
+  anzeige.textContent = t('editor.zaehlt');
   vorschauZeitgeber = setTimeout(async () => {
     try {
       const filter = nachFilter(zustand.kriterien, zustand.roh);
       const geerbt = d('e-eigenstaendig').checked ? [] : zustand.geerbt;
       const ergebnis = await api.vorschau(filter, geerbt);
-      const wieViele = ergebnis.anzahl === 1 ? '1 Dokument' : ergebnis.anzahl + ' Dokumente';
+      const wieViele = tn('ordner.dokumente', ergebnis.anzahl);
       const abfragen = ergebnis.schichten > 1
-        ? ` (${ergebnis.schichten} Abfragen, PaperTree schneidet über die IDs)` : '';
+        ? ' ' + t('editor.schichten', { anzahl: zahlText(ergebnis.schichten) }) : '';
       anzeige.textContent = wieViele + abfragen;
     } catch (fehler) {
-      anzeige.textContent = 'Trefferzahl nicht ermittelbar.';
+      anzeige.textContent = t('editor.zaehlerFehler');
     }
   }, 350);
 }
@@ -487,7 +496,7 @@ function symbolknopfZeichnen() {
   const name = (zustand && zustand.knoten.symbol) || '';
   knopf.innerHTML = '';
   knopf.append(symbolSvg(name, 18));
-  knopf.title = name ? 'Symbol: ' + name : 'Symbol auswählen';
+  knopf.title = name ? t('editor.symbolName', { name }) : t('editor.symbolWaehlen');
   if (name && !symbolInhalt(name)) {
     symboleLaden().then(() => {
       if (zustand && zustand.knoten.symbol === name) symbolknopfZeichnen();
@@ -498,7 +507,7 @@ function symbolknopfZeichnen() {
 
 async function speichern() {
   const name = d('e-name').value.trim();
-  if (!name) throw new Error('Der Ordner braucht einen Namen.');
+  if (!name) throw new Error(t('editor.nameFehlt'));
 
   const elternWert = d('e-eltern').value;
   const daten = {

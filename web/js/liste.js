@@ -4,17 +4,20 @@ import { stamm } from './stamm.js';
 import { popperDa } from './tooltip.js';
 import { korrespondentLogo, tagSymbol } from './darstellung.js';
 import { symbolInhalt, symboleLaden, symbolSvg } from './symbole.js';
+import { datum, t, zahlText } from './sprache.js';
 
+// In den Tabellen steht nicht die Beschriftung, sondern ihr Schlüssel: die
+// Spaltenliste entsteht beim Laden des Moduls, die Sprache erst danach.
 export const SPALTEN = {
-  title: { name: 'Titel', zeichne: (dok) => verweis(dok) },
-  correspondent: { name: 'Korrespondent', zeichne: (dok) => korrespondentZelle(dok) },
-  document_type: { name: 'Typ', zeichne: (dok) => text(namen('document_types', dok.document_type)) },
-  storage_path: { name: 'Speicherpfad', zeichne: (dok) => text(namen('storage_paths', dok.storage_path)) },
-  tags: { name: 'Tags', zeichne: (dok, kontext) => marken(dok.tags, kontext) },
-  created: { name: 'Erstellt', klasse: 'datum', zeichne: (dok) => text(datum(dok.created_date || dok.created)) },
-  added: { name: 'Hinzugefügt', klasse: 'datum', zeichne: (dok) => text(datum(dok.added)) },
-  page_count: { name: 'Seiten', klasse: 'datum', zeichne: (dok) => text(dok.page_count) },
-  archive_serial_number: { name: 'Archivnr.', klasse: 'datum', zeichne: (dok) => text(dok.archive_serial_number) },
+  title: { beschriftung: 'liste.spalte.titel', zeichne: (dok) => verweis(dok) },
+  correspondent: { beschriftung: 'liste.spalte.korrespondent', zeichne: (dok) => korrespondentZelle(dok) },
+  document_type: { beschriftung: 'liste.spalte.typ', zeichne: (dok) => text(namen('document_types', dok.document_type)) },
+  storage_path: { beschriftung: 'liste.spalte.speicherpfad', zeichne: (dok) => text(namen('storage_paths', dok.storage_path)) },
+  tags: { beschriftung: 'liste.spalte.tags', zeichne: (dok, kontext) => marken(dok.tags, kontext) },
+  created: { beschriftung: 'liste.spalte.erstellt', klasse: 'datum', zeichne: (dok) => text(datum(dok.created_date || dok.created)) },
+  added: { beschriftung: 'liste.spalte.hinzugefuegt', klasse: 'datum', zeichne: (dok) => text(datum(dok.added)) },
+  page_count: { beschriftung: 'liste.spalte.seiten', klasse: 'datum', zeichne: (dok) => text(dok.page_count) },
+  archive_serial_number: { beschriftung: 'liste.spalte.archivnr', klasse: 'datum', zeichne: (dok) => text(dok.archive_serial_number) },
 };
 
 const SORTIERBAR = {
@@ -32,41 +35,27 @@ const SORTIERBAR = {
 // Liste (am Handy der einzige Weg, weil der Tabellenkopf dort fehlt) und der
 // Ordner-Editor.
 export const SORTIERUNGEN = [
-  ['-created', 'Erstellt, neueste zuerst'],
-  ['created', 'Erstellt, älteste zuerst'],
-  ['-added', 'Hinzugefügt, neueste zuerst'],
-  ['added', 'Hinzugefügt, älteste zuerst'],
-  ['title', 'Titel A–Z'],
-  ['-title', 'Titel Z–A'],
-  ['correspondent__name', 'Korrespondent A–Z'],
-  ['-correspondent__name', 'Korrespondent Z–A'],
-  ['document_type__name', 'Dokumenttyp A–Z'],
-  ['storage_path__name', 'Speicherpfad A–Z'],
-  ['-modified', 'Geändert, neueste zuerst'],
-  ['-page_count', 'Seitenzahl, absteigend'],
-  ['page_count', 'Seitenzahl, aufsteigend'],
-  ['archive_serial_number', 'Archivnummer'],
-  ['id', 'Kennung'],
+  ['-created', 'sortierung.erstelltNeu'],
+  ['created', 'sortierung.erstelltAlt'],
+  ['-added', 'sortierung.hinzugefuegtNeu'],
+  ['added', 'sortierung.hinzugefuegtAlt'],
+  ['title', 'sortierung.titelAuf'],
+  ['-title', 'sortierung.titelAb'],
+  ['correspondent__name', 'sortierung.korrespondentAuf'],
+  ['-correspondent__name', 'sortierung.korrespondentAb'],
+  ['document_type__name', 'sortierung.typAuf'],
+  ['storage_path__name', 'sortierung.speicherpfadAuf'],
+  ['-modified', 'sortierung.geaendertNeu'],
+  ['-page_count', 'sortierung.seitenAb'],
+  ['page_count', 'sortierung.seitenAuf'],
+  ['archive_serial_number', 'sortierung.archivnummer'],
+  ['id', 'sortierung.kennung'],
 ];
 
 function namen(art, id) {
   if (id == null) return '';
   const eintrag = stamm.nachId[art] && stamm.nachId[art][String(id)];
   return eintrag ? eintrag.name : '#' + id;
-}
-
-// Immer DD.MM.YYYY. Ein reiner Datumstext wird direkt umgestellt und nicht
-// durch Date geschickt: "2026-01-23" wäre dort UTC-Mitternacht und könnte je
-// nach Zeitzone auf den Vortag fallen.
-export function datum(wert) {
-  if (!wert) return '';
-  const text = String(wert);
-  const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(text);
-  if (iso) return iso[3] + '.' + iso[2] + '.' + iso[1];
-  const d = new Date(text);
-  if (isNaN(d)) return text.slice(0, 10);
-  const zwei = (n) => String(n).padStart(2, '0');
-  return zwei(d.getDate()) + '.' + zwei(d.getMonth() + 1) + '.' + d.getFullYear();
 }
 
 function text(wert) {
@@ -78,7 +67,7 @@ function text(wert) {
 function verweis(dok) {
   const a = document.createElement('a');
   a.href = '#/dok/' + dok.id;
-  a.textContent = dok.title || '(ohne Titel)';
+  a.textContent = dok.title || t('liste.ohneTitel');
   return a;
 }
 
@@ -171,7 +160,7 @@ export function markeChip(id, { voll = false, beiKlick = null, gewaehlt = false 
   }
   // Popper übernimmt den Tooltip; ohne Popper bleibt der des Browsers.
   chip.dataset.tooltip = beiKlick
-    ? name + (gewaehlt ? ' – Filter entfernen' : ' – nur diese anzeigen')
+    ? t(gewaehlt ? 'liste.tagFilterAus' : 'liste.tagNurDiese', { name })
     : name;
   if (!popperDa()) chip.title = chip.dataset.tooltip;
 
@@ -229,8 +218,9 @@ function paperlessVerweis(dok, kontext) {
   a.href = basis.replace(/\/$/, '') + '/documents/' + dok.id + '/details';
   a.target = '_blank';
   a.rel = 'noopener';
-  a.dataset.tooltip = 'In Paperless öffnen';
-  a.setAttribute('aria-label', 'In Paperless öffnen: ' + (dok.title || dok.id));
+  a.dataset.tooltip = t('allgemein.inPaperless');
+  a.setAttribute('aria-label',
+    t('liste.inPaperlessDok', { titel: dok.title || dok.id }));
   a.append(symbolExtern());
   return a;
 }
@@ -249,8 +239,8 @@ function spaltenknopf(aktuelle, beiSpalten) {
   const knopf = document.createElement('button');
   knopf.type = 'button';
   knopf.className = 'knopf klein';
-  knopf.dataset.tooltip = 'Welche Spalten die Tabelle zeigt';
-  knopf.append(spaltenSymbol(), document.createTextNode('Spalten'));
+  knopf.dataset.tooltip = t('liste.spaltenTitel');
+  knopf.append(spaltenSymbol(), document.createTextNode(t('liste.spalten')));
 
   const menue = document.createElement('div');
   menue.className = 'spaltenmenue';
@@ -268,7 +258,7 @@ function spaltenknopf(aktuelle, beiSpalten) {
     if (schluessel === 'title') {
       haken.checked = true;
       haken.disabled = true;
-      zeile.dataset.tooltip = 'Der Titel bleibt immer sichtbar';
+      zeile.dataset.tooltip = t('liste.titelBleibt');
     }
     haken.addEventListener('change', () => {
       if (haken.checked) gewaehlt.add(schluessel); else gewaehlt.delete(schluessel);
@@ -276,7 +266,7 @@ function spaltenknopf(aktuelle, beiSpalten) {
       beiSpalten(Object.keys(SPALTEN).filter((k) => gewaehlt.has(k)));
     });
     const text = document.createElement('span');
-    text.textContent = definition.name;
+    text.textContent = t(definition.beschriftung);
     zeile.append(haken, text);
     menue.append(zeile);
   }
@@ -333,9 +323,8 @@ export function listeZeichnen(ergebnis, spalten, optionen = {}) {
   if (!ergebnis.results.length) {
     const leer = document.createElement('div');
     leer.className = 'karte leer';
-    leer.textContent = ergebnis.count === 0
-      ? 'Keine Dokumente in diesem Ordner.'
-      : 'Auf dieser Seite keine Dokumente.';
+    leer.textContent = t(ergebnis.count === 0
+      ? 'liste.leerOrdner' : 'liste.leerSeite');
     huelle.append(leer);
     return huelle;
   }
@@ -358,7 +347,7 @@ export function listeZeichnen(ergebnis, spalten, optionen = {}) {
       bild.alt = '';
       const beschriftung = document.createElement('div');
       beschriftung.className = 'text';
-      beschriftung.textContent = dok.title || '(ohne Titel)';
+      beschriftung.textContent = dok.title || t('liste.ohneTitel');
       kachel.append(bild, beschriftung);
       gitter.append(kachel);
     }
@@ -384,7 +373,7 @@ export function listeZeichnen(ergebnis, spalten, optionen = {}) {
         knopf.type = 'button';
         knopf.className = 'sortierknopf' + (aktiv ? ' aktiv' : '');
         const beschriftung = document.createElement('span');
-        beschriftung.textContent = definition.name;
+        beschriftung.textContent = t(definition.beschriftung);
         const zeiger = document.createElement('span');
         zeiger.className = 'sortierpfeil';
         // Aktive Spalte: wohin es gerade sortiert. Sonst blass, was ein Klick
@@ -392,19 +381,18 @@ export function listeZeichnen(ergebnis, spalten, optionen = {}) {
         zeiger.textContent = aktiv ? (absteigend ? '↓' : '↑') : '↕';
         knopf.append(beschriftung, zeiger);
         knopf.dataset.tooltip = aktiv
-          ? (absteigend ? 'Absteigend sortiert – klicken für aufsteigend'
-                        : 'Aufsteigend sortiert – klicken für absteigend')
-          : 'Nach ' + definition.name + ' sortieren';
+          ? t(absteigend ? 'liste.sortAbAktiv' : 'liste.sortAufAktiv')
+          : t('liste.sortNach', { spalte: t(definition.beschriftung) });
         knopf.addEventListener('click', () => {
           beiSortierung(aktiv && !absteigend ? '-' + feld : feld);
         });
         zelle.append(knopf);
       } else {
-        zelle.textContent = definition.name;
+        zelle.textContent = t(definition.beschriftung);
         if (schluessel === 'tags') {
           // Paperless kann nicht nach Tags sortieren (ordering_fields kennt
           // das Feld nicht). Lieber sagen als einen Knopf anbieten, der nichts tut.
-          zelle.dataset.tooltip = 'Paperless kann nicht nach Tags sortieren';
+          zelle.dataset.tooltip = t('liste.tagsNichtSortierbar');
           zelle.classList.add('nicht-sortierbar');
         }
       }
@@ -417,7 +405,7 @@ export function listeZeichnen(ergebnis, spalten, optionen = {}) {
       zelle.className = 'verweisspalte';
       const verborgen = document.createElement('span');
       verborgen.className = 'nur-vorlesen';
-      verborgen.textContent = 'In Paperless öffnen';
+      verborgen.textContent = t('allgemein.inPaperless');
       zelle.append(verborgen);
       kopfzeile.append(zelle);
     }
@@ -461,16 +449,16 @@ function sortierwahl(ergebnis, beiSortierung) {
 
   const beschriftung = document.createElement('label');
   beschriftung.className = 'hinweis';
-  beschriftung.textContent = 'Sortierung';
+  beschriftung.textContent = t('liste.sortierung');
   beschriftung.setAttribute('for', 'sortierwahl-feld');
 
   const feld = document.createElement('select');
   feld.id = 'sortierwahl-feld';
   const aktuell = ergebnis.ordering || '';
-  for (const [wert, name] of SORTIERUNGEN) {
+  for (const [wert, schluessel] of SORTIERUNGEN) {
     const option = document.createElement('option');
     option.value = wert;
-    option.textContent = name;
+    option.textContent = t(schluessel);
     feld.append(option);
   }
   // Eine Sortierung, die nicht in der Liste steht (etwa nach einem
@@ -509,14 +497,15 @@ function blaettern(ergebnis, beiSeite, oben = false) {
 
   // Nur Zeichen, kein Wort – aber als gezeichnetes Symbol, nicht als
   // Schriftzeichen. Der Sinn steckt im aria-label und im Tooltip.
-  const zurueck = blattknopf('links', 'Vorherige Seite');
+  const zurueck = blattknopf('links', t('liste.vorherige'));
   zurueck.disabled = ergebnis.page <= 1;
   zurueck.addEventListener('click', () => beiSeite(ergebnis.page - 1));
 
   const stand = document.createElement('span');
-  stand.textContent = 'Seite ' + ergebnis.page + ' von ' + ergebnis.pages;
+  stand.textContent = t('liste.seiteVon', {
+    seite: zahlText(ergebnis.page), von: zahlText(ergebnis.pages) });
 
-  const vor = blattknopf('rechts', 'Nächste Seite');
+  const vor = blattknopf('rechts', t('liste.naechste'));
   vor.disabled = ergebnis.page >= ergebnis.pages;
   vor.addEventListener('click', () => beiSeite(ergebnis.page + 1));
 

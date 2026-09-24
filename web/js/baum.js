@@ -3,6 +3,7 @@ import { api } from './api.js';
 import { stamm } from './stamm.js';
 import { ausFilter } from './kriterien.js';
 import { satzJetzt, symbolInhalt, symboleLaden, symbolSvg } from './symbole.js';
+import { sprache, t, tn, zahlText } from './sprache.js';
 
 export const baum = { knoten: [], nachId: {}, kinder: {}, geladen: false };
 
@@ -29,7 +30,8 @@ export async function baumLaden() {
     (baum.kinder[schluessel] = baum.kinder[schluessel] || []).push(knoten);
   }
   for (const liste of Object.values(baum.kinder)) {
-    liste.sort((a, b) => (a.reihenfolge - b.reihenfolge) || a.name.localeCompare(b.name, 'de'));
+    liste.sort((a, b) =>
+      (a.reihenfolge - b.reihenfolge) || a.name.localeCompare(b.name, sprache()));
   }
   baum.geladen = true;
   return baum;
@@ -61,18 +63,18 @@ export function fehlendeReferenzen(filter) {
   const { kriterien } = ausFilter(filter || {});
   const fehlend = [];
   for (const kriterium of kriterien) {
-    if (kriterium.art === 'tags') pruefe('tags', kriterium.wert, 'Tag');
-    else if (kriterium.art === 'korrespondent') pruefe('correspondents', kriterium.wert, 'Korrespondent');
-    else if (kriterium.art === 'dokumenttyp') pruefe('document_types', kriterium.wert, 'Dokumenttyp');
-    else if (kriterium.art === 'speicherpfad') pruefe('storage_paths', kriterium.wert, 'Speicherpfad');
+    if (kriterium.art === 'tags') pruefe('tags', kriterium.wert, 'art.tag');
+    else if (kriterium.art === 'korrespondent') pruefe('correspondents', kriterium.wert, 'art.korrespondent');
+    else if (kriterium.art === 'dokumenttyp') pruefe('document_types', kriterium.wert, 'art.dokumenttyp');
+    else if (kriterium.art === 'speicherpfad') pruefe('storage_paths', kriterium.wert, 'art.speicherpfad');
     else if (kriterium.art.startsWith('zf:')) {
       const id = kriterium.art.slice(3);
-      if (!stamm.nachId.custom_fields[String(id)]) fehlend.push('Zusatzfeld #' + id);
+      if (!stamm.nachId.custom_fields[String(id)]) fehlend.push(t('art.zusatzfeld') + ' #' + id);
     }
   }
-  function pruefe(art, werte, wort) {
+  function pruefe(art, werte, schluessel) {
     for (const id of werte || []) {
-      if (!stamm.nachId[art][String(id)]) fehlend.push(wort + ' #' + id);
+      if (!stamm.nachId[art][String(id)]) fehlend.push(t(schluessel) + ' #' + id);
     }
   }
   return fehlend;
@@ -118,7 +120,7 @@ export function baumZeichnen(aktiveId) {
     const leer = document.createElement('p');
     leer.className = 'hinweis';
     leer.style.padding = '8px 10px';
-    leer.textContent = 'Noch keine Ordner. Mit "+ Ordner" den ersten anlegen.';
+    leer.textContent = t('baum.leer');
     behaelter.append(leer);
     return;
   }
@@ -157,7 +159,7 @@ function hintergrundVerdrahten(behaelter) {
       await baumLaden();
       baumZeichnen(aktuelleId);
     } catch (fehler) {
-      alert('Verschieben nicht möglich: ' + (fehler.message || fehler));
+      alert(t('fehler.verschieben', { grund: fehler.message || fehler }));
     }
   });
 }
@@ -196,7 +198,7 @@ function gruppenAnhaengen(behaelter, knoten, aktiveId) {
     const platzhalter = document.createElement('div');
     platzhalter.className = 'hinweis';
     platzhalter.style.padding = '2px 8px';
-    platzhalter.textContent = 'Unterordner werden ermittelt …';
+    platzhalter.textContent = t('ordner.gruppenLaden');
     behaelter.append(platzhalter);
 
     if (!gruppenLaeuft.has(knoten.id)) {
@@ -216,7 +218,7 @@ function gruppenAnhaengen(behaelter, knoten, aktiveId) {
     const leer = document.createElement('div');
     leer.className = 'hinweis';
     leer.style.padding = '2px 8px';
-    leer.textContent = 'keine Werte vorhanden';
+    leer.textContent = t('baum.gruppenLeer');
     behaelter.append(leer);
     return;
   }
@@ -237,7 +239,7 @@ function gruppenAnhaengen(behaelter, knoten, aktiveId) {
     name.type = 'button';
     name.className = 'knoten-name';
     name.textContent = gruppe.name;
-    name.title = 'Automatisch aufgespannt';
+    name.title = t('baum.aufgespannt');
     name.addEventListener('click', () => {
       location.hash = '#/ordner/' + knoten.id + '?gruppe=' + encodeURIComponent(gruppe.wert);
     });
@@ -245,7 +247,7 @@ function gruppenAnhaengen(behaelter, knoten, aktiveId) {
 
     const anzahl = document.createElement('span');
     anzahl.className = 'zaehler';
-    anzahl.textContent = gruppe.anzahl;
+    anzahl.textContent = zahlText(gruppe.anzahl);
     zeile.append(anzahl);
 
     behaelter.append(zeile);
@@ -347,7 +349,7 @@ function ziehenVerdrahten(zeile, knoten, aktiveId) {
     try {
       await ablegen(knoten, zone, aktiveId);
     } catch (fehler) {
-      alert('Verschieben nicht möglich: ' + (fehler.message || fehler));
+      alert(t('fehler.verschieben', { grund: fehler.message || fehler }));
     }
   });
 }
@@ -364,7 +366,7 @@ function zeile(knoten, aktiveId) {
   pfeil.className = 'pfeil' + (hatKinder ? '' : ' platzhalter');
   pfeil.type = 'button';
   pfeil.textContent = offen.has(knoten.id) ? '▼' : '▶';
-  pfeil.title = offen.has(knoten.id) ? 'Zuklappen' : 'Aufklappen';
+  pfeil.title = t(offen.has(knoten.id) ? 'baum.zuklappen' : 'baum.aufklappen');
   pfeil.addEventListener('click', (ereignis) => {
     ereignis.stopPropagation();
     if (offen.has(knoten.id)) offen.delete(knoten.id); else offen.add(knoten.id);
@@ -385,7 +387,7 @@ function zeile(knoten, aktiveId) {
   const nurNavigation = !knoten.eigener_filter && !knoten.kinder_einbeziehen;
   name.className = 'knoten-name' + (nurNavigation ? ' navigation' : '');
   name.textContent = knoten.name;
-  name.title = nurNavigation ? 'Reine Navigation' : '';
+  name.title = nurNavigation ? t('baum.nurNavigation') : '';
   name.addEventListener('click', () => {
     if (nurNavigation && hatKinder) {
       if (offen.has(knoten.id)) offen.delete(knoten.id); else offen.add(knoten.id);
@@ -400,7 +402,7 @@ function zeile(knoten, aktiveId) {
     const warnung = document.createElement('span');
     warnung.className = 'warnung';
     warnung.textContent = '⚠';
-    warnung.title = 'Fehlt in Paperless: ' + fehlend.join(', ');
+    warnung.title = t('baum.fehltInPaperless', { was: fehlend.join(', ') });
     zeile.append(warnung);
   }
 
@@ -408,7 +410,7 @@ function zeile(knoten, aktiveId) {
     const anzahl = document.createElement('span');
     anzahl.className = 'zaehler';
     anzahl.dataset.knoten = knoten.id;
-    anzahl.textContent = zaehler.has(knoten.id) ? zaehler.get(knoten.id) : '';
+    anzahl.textContent = zaehler.has(knoten.id) ? zahlText(zaehler.get(knoten.id)) : '';
     zeile.append(anzahl);
   }
 
@@ -416,7 +418,7 @@ function zeile(knoten, aktiveId) {
   menue.type = 'button';
   menue.className = 'stift';
   menue.textContent = '⋯';
-  menue.title = 'Ordner verwalten';
+  menue.title = t('baum.verwalten');
   menue.setAttribute('aria-haspopup', 'menu');
   menue.addEventListener('click', (ereignis) => {
     ereignis.stopPropagation();
@@ -468,22 +470,22 @@ function kontextmenue(knoten, anker, aktiveId) {
   const nachfahren = nachfahrenZahl(knoten.id);
 
   const eintraege = [
-    { symbol: 'stift', text: 'Bearbeiten', tun: () => beiBearbeiten && beiBearbeiten(knoten.id) },
-    { symbol: 'plus', text: 'Unterordner anlegen', tun: () => beiAnlegen && beiAnlegen(knoten.id) },
+    { symbol: 'stift', text: t('menue.bearbeiten'), tun: () => beiBearbeiten && beiBearbeiten(knoten.id) },
+    { symbol: 'plus', text: t('menue.unterordner'), tun: () => beiAnlegen && beiAnlegen(knoten.id) },
   ];
   if (stelle > 0) {
-    eintraege.push({ symbol: 'hoch', text: 'Nach oben', tun: () => verschieben(knoten, -1, aktiveId) });
+    eintraege.push({ symbol: 'hoch', text: t('menue.hoch'), tun: () => verschieben(knoten, -1, aktiveId) });
   }
   if (stelle < geschwister.length - 1) {
-    eintraege.push({ symbol: 'runter', text: 'Nach unten', tun: () => verschieben(knoten, 1, aktiveId) });
+    eintraege.push({ symbol: 'runter', text: t('menue.runter'), tun: () => verschieben(knoten, 1, aktiveId) });
   }
   eintraege.push({ trenner: true });
   eintraege.push({
-    symbol: 'muell', text: 'Löschen', gefahr: true,
+    symbol: 'muell', text: t('allgemein.loeschen'), gefahr: true,
     tun: async () => {
       const frage = nachfahren
-        ? `"${knoten.name}" und ${nachfahren} Unterordner löschen? Die Dokumente in Paperless bleiben unberührt.`
-        : `"${knoten.name}" löschen? Die Dokumente in Paperless bleiben unberührt.`;
+        ? tn('menue.loeschenMitKindern', nachfahren, { name: knoten.name })
+        : t('menue.loeschenFrage', { name: knoten.name });
       if (!confirm(frage)) return;
       await api.ordnerLoeschen(knoten.id);
       if (beiAktualisieren) beiAktualisieren(null);
@@ -518,7 +520,7 @@ function kontextmenue(knoten, anker, aktiveId) {
       try {
         await eintrag.tun();
       } catch (fehler) {
-        alert('Das ging nicht: ' + (fehler.message || fehler));
+        alert(t('fehler.allgemein', { grund: fehler.message || fehler }));
       }
     });
     menue.append(knopf);
@@ -561,12 +563,12 @@ async function zaehlerNachladen() {
   const felder = [...document.querySelectorAll('.zaehler[data-knoten]')];
   for (const feld of felder) {
     const id = Number(feld.dataset.knoten);
-    if (zaehler.has(id)) { feld.textContent = zaehler.get(id); continue; }
+    if (zaehler.has(id)) { feld.textContent = zahlText(zaehler.get(id)); continue; }
     try {
       const ergebnis = await api.anzahl(id);
       zaehler.set(id, ergebnis.anzahl);
       const nochDa = document.querySelector('.zaehler[data-knoten="' + id + '"]');
-      if (nochDa) nochDa.textContent = ergebnis.anzahl;
+      if (nochDa) nochDa.textContent = zahlText(ergebnis.anzahl);
     } catch (_) {
       zaehler.set(id, '');
     }

@@ -12,6 +12,7 @@ import { tooltipVerdrahten } from './tooltip.js';
 import { darstellung, darstellungLaden } from './darstellung.js';
 import { symboleLaden } from './symbole.js';
 import { einstellungenZeichnen } from './einstellungen.js';
+import { spracheEinrichten, t, textenSetzen, tn, zahlText } from './sprache.js';
 
 const inhalt = document.getElementById('inhalt');
 let ich = null;
@@ -23,10 +24,10 @@ function zeige(knoten) {
   inhalt.scrollTop = 0;
 }
 
-function laedt(text = 'Wird geladen …') {
+function laedt(text = null) {
   const p = document.createElement('div');
   p.className = 'laedt';
-  p.textContent = text;
+  p.textContent = text === null ? t('allgemein.laedt') : text;
   return p;
 }
 
@@ -54,15 +55,13 @@ async function dashboard() {
   const kopf = document.createElement('div');
   kopf.className = 'titelzeile';
   const titel = document.createElement('h1');
-  titel.textContent = 'Dashboard';
+  titel.textContent = t('dashboard.titel');
   kopf.append(titel);
   huelle.append(kopf);
 
   const gewaehlt = baum.knoten.filter((k) => k.auf_dashboard);
   if (!gewaehlt.length) {
-    huelle.append(kasten(
-      'Noch keine Ordner auf dem Dashboard. Im Editor eines Ordners "Auf dem '
-      + 'PaperTree-Dashboard anzeigen" einschalten.'));
+    huelle.append(kasten(t('dashboard.leer')));
     zeige(huelle);
     return;
   }
@@ -84,7 +83,7 @@ async function dashboard() {
     kachel.append(zahl, name, wo);
     gitter.append(kachel);
     api.anzahl(knoten.id)
-      .then((ergebnis) => { zahl.textContent = ergebnis.anzahl; })
+      .then((ergebnis) => { zahl.textContent = zahlText(ergebnis.anzahl); })
       .catch(() => { zahl.textContent = '–'; });
   }
   huelle.append(gitter);
@@ -94,7 +93,7 @@ async function dashboard() {
 // --- Ordner ------------------------------------------------------------------
 async function ordnerZeigen(id, params) {
   const knoten = baum.nachId[id];
-  if (!knoten) { zeige(kasten('Diesen Ordner gibt es nicht.', true)); return; }
+  if (!knoten) { zeige(kasten(t('ordner.unbekannt'), true)); return; }
 
   const huelle = document.createElement('div');
 
@@ -128,12 +127,12 @@ async function ordnerZeigen(id, params) {
 
   const bearbeiten = document.createElement('button');
   bearbeiten.className = 'knopf';
-  bearbeiten.textContent = 'Ordner bearbeiten';
+  bearbeiten.textContent = t('ordner.bearbeiten');
   bearbeiten.addEventListener('click', () => ordnerBearbeiten(id));
 
   const unterordner = document.createElement('button');
   unterordner.className = 'knopf';
-  unterordner.textContent = '+ Unterordner';
+  unterordner.textContent = t('ordner.unterordnerNeu');
   unterordner.addEventListener('click', () => ordnerAnlegen(id));
 
   werkzeuge.append(unterordner, bearbeiten);
@@ -142,11 +141,11 @@ async function ordnerZeigen(id, params) {
 
   // Was dieser Ordner zeigt, in Worten
   const worte = [];
-  if (knoten.eigener_filter) worte.push(beschreibe(knoten.filter) || 'alle Dokumente');
+  if (knoten.eigener_filter) {
+    worte.push(beschreibe(knoten.filter) || t('ordner.alleDokumente'));
+  }
   if (knoten.kinder_einbeziehen) {
-    worte.push(knoten.kinder_tief
-      ? 'zusätzlich alle Unterordner'
-      : 'zusätzlich die direkten Unterordner');
+    worte.push(t(knoten.kinder_tief ? 'ordner.plusAlleUnter' : 'ordner.plusDirekteUnter'));
   }
   if (worte.length) {
     const beschreibung = document.createElement('p');
@@ -159,9 +158,7 @@ async function ordnerZeigen(id, params) {
   const fehlend = knoten.eigener_filter ? fehlendeReferenzen(knoten.filter) : [];
   if (fehlend.length) {
     huelle.append(kasten(
-      'Dieser Filter nennt etwas, das in Paperless nicht mehr existiert: '
-      + fehlend.join(', ') + '. Der Ordner bleibt bestehen – bitte den Filter anpassen.',
-      true));
+      t('ordner.fehlendeReferenzen', { was: fehlend.join(', ') }), true));
   }
 
   const unterliste = kinderVon(id);
@@ -184,14 +181,14 @@ async function ordnerZeigen(id, params) {
     const leiste = document.createElement('div');
     leiste.className = 'werkzeuge';
     leiste.style.margin = '0 0 12px';
-    leiste.append(laedt('Unterordner werden ermittelt …'));
+    leiste.append(laedt(t('ordner.gruppenLaden')));
     huelle.append(leiste);
     api.gruppen(id).then((ergebnis) => {
       leiste.innerHTML = '';
       if (!(ergebnis.gruppen || []).length) {
         const leer = document.createElement('span');
         leer.className = 'hinweis';
-        leer.textContent = 'Keine Werte für „' + (ergebnis.dimension_name || '') + '“ vorhanden.';
+        leer.textContent = t('ordner.gruppenLeer', { was: ergebnis.dimension_name || '' });
         leiste.append(leer);
         return;
       }
@@ -199,14 +196,14 @@ async function ordnerZeigen(id, params) {
         const zurueck = document.createElement('a');
         zurueck.className = 'knopf klein';
         zurueck.href = '#/ordner/' + id;
-        zurueck.textContent = '‹ alle';
+        zurueck.textContent = t('ordner.gruppeAlle');
         leiste.append(zurueck);
       }
       for (const g of ergebnis.gruppen) {
         const a = document.createElement('a');
         a.className = 'knopf klein' + (gruppe === g.wert ? ' haupt' : '');
         a.href = '#/ordner/' + id + '?gruppe=' + encodeURIComponent(g.wert);
-        a.textContent = g.name + ' (' + g.anzahl + ')';
+        a.textContent = g.name + ' (' + zahlText(g.anzahl) + ')';
         leiste.append(a);
       }
     }).catch(() => { leiste.innerHTML = ''; });
@@ -216,9 +213,8 @@ async function ordnerZeigen(id, params) {
   // Gruppe selbst die Bedingung.
   if (!knoten.eigener_filter && !knoten.kinder_einbeziehen && !inGruppe) {
     const woanders = unterliste.length || knoten.gruppieren_nach;
-    huelle.append(kasten(woanders
-      ? 'Dieser Ordner dient der Navigation. Oben einen Unterordner wählen.'
-      : 'Dieser Ordner dient der Navigation und hat noch keine Unterordner.'));
+    huelle.append(kasten(t(woanders
+      ? 'ordner.nurNavigation' : 'ordner.nurNavigationLeer')));
     zeige(huelle);
     return;
   }
@@ -251,7 +247,7 @@ async function ordnerZeigen(id, params) {
       if (inGruppe) anfrage.gruppe = gruppe;
       if (gewaehlteTags.length) anfrage.tag = gewaehlteTags.join(',');
       const ergebnis = await api.ordnerDokumente(id, anfrage);
-      anzahlAnzeige.textContent = ergebnis.count === 1 ? '1 Dokument' : ergebnis.count + ' Dokumente';
+      anzahlAnzeige.textContent = tn('ordner.dokumente', ergebnis.count);
       const spalten = (knoten.spalten && knoten.spalten.length)
         ? knoten.spalten.filter((s) => SPALTEN[s])
         : ['title', 'correspondent', 'document_type', 'tags', 'created'];
@@ -279,7 +275,7 @@ async function ordnerZeigen(id, params) {
       }));
     } catch (fehler) {
       bereich.innerHTML = '';
-      bereich.append(kasten('Die Dokumente liessen sich nicht laden: ' + fehler.message, true));
+      bereich.append(kasten(t('fehler.dokumenteListe', { grund: fehler.message }), true));
     }
   }
 
@@ -296,10 +292,10 @@ async function ordnerZeigen(id, params) {
     const feld = document.createElement('input');
     feld.type = 'search';
     feld.className = 'listensuche';
-    feld.placeholder = 'In dieser Liste suchen …';
+    feld.placeholder = t('ordner.listensuche');
     feld.autocomplete = 'off';
     feld.value = params.get('q') || '';
-    feld.setAttribute('aria-label', 'In dieser Liste suchen');
+    feld.setAttribute('aria-label', t('ordner.listensucheMarke'));
     let zeitgeber = null;
     feld.addEventListener('input', () => {
       clearTimeout(zeitgeber);
@@ -358,7 +354,7 @@ function filterLeiste(params, aktualisieren) {
 
   const beschriftung = document.createElement('span');
   beschriftung.className = 'hinweis';
-  beschriftung.textContent = gewaehlt.length === 1 ? 'Gefiltert nach Tag:' : 'Gefiltert nach Tags:';
+  beschriftung.textContent = tn('filter.gefiltertNach', gewaehlt.length);
   leiste.append(beschriftung);
 
   for (const id of gewaehlt) {
@@ -372,7 +368,7 @@ function filterLeiste(params, aktualisieren) {
 
   const zuruecksetzen = document.createElement('button');
   zuruecksetzen.className = 'knopf klein';
-  zuruecksetzen.textContent = 'Filter zurücksetzen';
+  zuruecksetzen.textContent = t('filter.zuruecksetzen');
   zuruecksetzen.addEventListener('click', () => {
     params.delete('tag');
     params.set('page', 1);
@@ -402,7 +398,7 @@ async function sucheZeigen(params) {
   const kopf = document.createElement('div');
   kopf.className = 'titelzeile';
   const titel = document.createElement('h1');
-  titel.textContent = 'Suche';
+  titel.textContent = t('suche.titel');
   const anzahlAnzeige = document.createElement('span');
   anzahlAnzeige.className = 'anzahl';
   kopf.append(titel, anzahlAnzeige);
@@ -411,7 +407,7 @@ async function sucheZeigen(params) {
   const beschreibung = document.createElement('p');
   beschreibung.className = 'hinweis';
   beschreibung.style.margin = '-6px 0 12px';
-  beschreibung.textContent = 'Volltextsuche über den ganzen Bestand: „' + frage + '“';
+  beschreibung.textContent = t('suche.beschreibung', { frage });
   huelle.append(beschreibung);
 
   const gewaehlteTags = tagsAus(params);
@@ -433,7 +429,7 @@ async function sucheZeigen(params) {
     const anfrage = { q: frage, page: seite };
     if (gewaehlteTags.length) anfrage.tag = gewaehlteTags.join(',');
     const ergebnis = await api.suche(anfrage);
-    anzahlAnzeige.textContent = ergebnis.count === 1 ? '1 Treffer' : ergebnis.count + ' Treffer';
+    anzahlAnzeige.textContent = tn('suche.treffer', ergebnis.count);
     bereich.innerHTML = '';
     bereich.append(listeZeichnen(ergebnis, ['title', 'correspondent', 'document_type', 'tags', 'created'], {
       gewaehlteTags,
@@ -443,7 +439,7 @@ async function sucheZeigen(params) {
     }));
   } catch (fehler) {
     bereich.innerHTML = '';
-    bereich.append(kasten('Die Suche schlug fehl: ' + fehler.message, true));
+    bereich.append(kasten(t('fehler.suche', { grund: fehler.message }), true));
   }
 }
 
@@ -484,25 +480,25 @@ async function wegweiser() {
   }
   if (teile[0] === 'dok' && teile[1]) {
     baumZeichnen(null);
-    zeige(laedt('Dokument wird geladen …'));
+    zeige(laedt(t('detail.laedt')));
     try {
       zeige(await detailZeichnen(Number(teile[1])));
     } catch (fehler) {
-      zeige(kasten('Das Dokument liess sich nicht laden: ' + fehler.message, true));
+      zeige(kasten(t('fehler.dokument', { grund: fehler.message }), true));
     }
     return;
   }
   if (teile[0] === 'einstellungen') {
     baumZeichnen(null);
     if (!ich || !ich.benutzer.admin) {
-      zeige(kasten('Die Einstellungen sind Administratoren vorbehalten.', true));
+      zeige(kasten(t('einstellungen.nurAdmin'), true));
       return;
     }
-    zeige(laedt('Einstellungen werden geladen …'));
+    zeige(laedt(t('einstellungen.laedt')));
     try {
       zeige(await einstellungenZeichnen());
     } catch (fehler) {
-      zeige(kasten('Die Einstellungen liessen sich nicht laden: ' + fehler.message, true));
+      zeige(kasten(t('fehler.einstellungen', { grund: fehler.message }), true));
     }
     return;
   }
@@ -532,21 +528,20 @@ async function baumImportieren(datei) {
   try {
     daten = JSON.parse(await datei.text());
   } catch (_) {
-    alert('Die Datei enthält kein gültiges JSON.');
+    alert(t('import.keinJson'));
     return;
   }
   if (!Array.isArray(daten.ordner)) {
-    alert('In der Datei steht kein PaperTree-Baum.');
+    alert(t('import.keinBaum'));
     return;
   }
   const wieViele = daten.ordner.length;
-  if (!confirm('Aus dieser Datei ' + wieViele + ' Ordner (samt Unterordnern) '
-      + 'zusätzlich anlegen? Der bestehende Baum bleibt unverändert.')) return;
+  if (!confirm(tn('import.frage', wieViele))) return;
   const ergebnis = await api.import(daten, null);
   const hinweis = (ergebnis.verworfen || []).length
-    ? '\nNicht übernommen: ' + ergebnis.verworfen.slice(0, 5).join(', ')
+    ? '\n' + t('import.verworfen', { was: ergebnis.verworfen.slice(0, 5).join(', ') })
     : '';
-  alert(ergebnis.angelegt + ' Ordner angelegt.' + hinweis);
+  alert(tn('import.angelegt', ergebnis.angelegt) + hinweis);
   await neuLaden(null);
 }
 
@@ -590,14 +585,13 @@ function abgemeldetZeigen(daten) {
 
   const huelle = document.createElement('div');
   huelle.append(kasten(
-    (daten && daten.hinweis) || 'Bitte in Paperless anmelden – PaperTree nutzt dieselbe Sitzung.',
-    true));
+    (daten && daten.hinweis) || t('anmeldung.hinweis'), true));
   const ziel = anmeldung || (daten && daten.paperless);
   if (ziel) {
     const a = document.createElement('a');
     a.className = 'knopf haupt';
     a.href = ziel;
-    a.textContent = 'Zur Paperless-Anmeldung';
+    a.textContent = t('anmeldung.knopf');
     huelle.append(a);
   }
   zeige(huelle);
@@ -678,14 +672,24 @@ function oberflaecheVerdrahten() {
 async function start() {
   oberflaecheVerdrahten();
 
+  // Zuerst die Sprache des Browsers: die Abmeldemeldung entsteht mitten in
+  // api.ich() und soll nicht auf Schlüsselnamen hinauslaufen. Sagt Paperless
+  // danach etwas anderes, wird nachgezogen.
+  await spracheEinrichten(null);
+  textenSetzen();
+
   try {
     ich = await api.ich();
     marke(false);
   } catch (fehler) {
     if (fehler.status === 401) return;
-    zeige(kasten('PaperTree erreicht Paperless nicht: ' + fehler.message, true));
+    zeige(kasten(t('fehler.paperless', { grund: fehler.message }), true));
     return;
   }
+
+  // Jetzt steht fest, was in Paperless eingestellt ist.
+  await spracheEinrichten(ich.benutzer);
+  textenSetzen();
 
   document.getElementById('benutzer').textContent = ich.benutzer.anzeige || ich.benutzer.name;
   // Der Einstellungslink erscheint nur für Administratoren. Das ist reine
@@ -712,7 +716,7 @@ async function start() {
 
   document.getElementById('baum-export').addEventListener('click', async () => {
     try { await baumExportieren(); }
-    catch (fehler) { alert('Export fehlgeschlagen: ' + fehler.message); }
+    catch (fehler) { alert(t('fehler.export', { grund: fehler.message })); }
   });
   const importFeld = document.getElementById('import-datei');
   document.getElementById('baum-import').addEventListener('click', () => importFeld.click());
@@ -721,7 +725,7 @@ async function start() {
     importFeld.value = '';
     if (!datei) return;
     try { await baumImportieren(datei); }
-    catch (fehler) { alert('Import fehlgeschlagen: ' + fehler.message); }
+    catch (fehler) { alert(t('fehler.import', { grund: fehler.message })); }
   });
   window.addEventListener('hashchange', () => {
     // Das Element hier holen, nicht über eine Variable aus start(): die
