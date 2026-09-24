@@ -727,6 +727,25 @@ async function start() {
     try { await baumImportieren(datei); }
     catch (fehler) { alert(t('fehler.import', { grund: fehler.message })); }
   });
+  // Wer die Sprache oder die Datumsanzeige umstellt, tut das in Paperless –
+  // in einem anderen Tab, während PaperTree offen bleibt. Die Einstellung
+  // wird sonst erst beim nächsten Neuladen sichtbar, und das sieht aus, als
+  // würde sie nicht übernommen. Beim Zurückwechseln also nachfragen und,
+  // wenn sich etwas geändert hat, die Ansicht neu zeichnen.
+  document.addEventListener('visibilitychange', async () => {
+    if (document.hidden || !ich) return;
+    let frisch;
+    try { frisch = await api.ich(); } catch (_) { return; }
+    const vorher = ich.benutzer || {};
+    const jetzt = frisch.benutzer || {};
+    if (vorher.sprache === jetzt.sprache
+        && vorher.datumssprache === jetzt.datumssprache) return;
+    ich = frisch;
+    await spracheEinrichten(jetzt);
+    textenSetzen();
+    await wegweiser();
+  });
+
   window.addEventListener('hashchange', () => {
     // Das Element hier holen, nicht über eine Variable aus start(): die
     // Seitenleisten-Verdrahtung liegt in ihrer eigenen Funktion.
