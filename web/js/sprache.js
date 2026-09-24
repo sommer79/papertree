@@ -20,12 +20,16 @@ export const RUECKFALL = 'en';
 // das einstellt, sähe sonst weiter das Datum seiner Anzeigesprache.
 export const ISO = 'iso-8601';
 
-// Die mittlere Form, von Hand zusammengesetzt statt über dateStyle: 'medium'.
-// Die beiden meinen nicht dasselbe. Intl schreibt "medium" in mehreren
-// Sprachen rein numerisch – auf Deutsch 24.09.2026 –, gemeint ist aber die
-// Form mit gekürztem Monatsnamen, die auch Paperless unter "Mittel" zeigt:
-// 24. Sept. 2026, 24 Sept 2026, 24 set 2026.
-const MITTELFORM = { day: 'numeric', month: 'short', year: 'numeric' };
+// Die mittlere Form, wie Paperless sie unter "Mittel" zeigt.
+//
+// Wie die aussieht, entscheidet die Sprache, nicht PaperTree: auf Deutsch
+// 24.09.2026, auf Englisch 24 Sept 2026, auf Französisch 24 sept. 2026.
+// Beide Seiten holen das aus derselben Quelle – Paperless über Angular,
+// PaperTree über Intl, und beide lesen die Formate von CLDR. Darum steht hier
+// die Stufe und nicht Tag, Monat und Jahr einzeln: eine eigene Zusammensetzung
+// würde dem Deutschen einen Monatsnamen aufzwingen, den Paperless dort nicht
+// schreibt.
+const MITTELFORM = { dateStyle: 'medium' };
 
 let katalog = {};
 let englisch = {};
@@ -155,13 +159,15 @@ function isoText(zeitpunkt) {
 }
 
 /**
- * Ein Datum in der mittleren Form: "24. Sept. 2026", "24 Sept 2026" – oder
- * "2026-09-24", wenn in Paperless ISO 8601 eingestellt ist.
+ * Ein Datum in der mittleren Form: "24.09.2026", "24 Sept 2026",
+ * "24 sept. 2026" – je nach Sprache – oder "2026-09-24", wenn in Paperless
+ * ISO 8601 eingestellt ist.
  *
- * Immer mittel, nie ausgeschrieben und nie rein numerisch: der gekürzte
- * Monatsname macht den Tag vom Monat unterscheidbar, ohne dass eine Spalte
- * mit dreissig Zeilen ausfranst. Die kurze Form schriebe das Jahr zweistellig,
- * was in einer Ablage niemand will.
+ * Immer mittel, nie lang: die lange Form schreibt den Monat aus und macht
+ * jede Zeile anders breit, die kurze schriebe das Jahr zweistellig, was in
+ * einer Ablage niemand will. Welches Format in Paperless unter "Format"
+ * steht, ändert daran nichts – dasselbe Dokument soll in beiden Oberflächen
+ * dasselbe Datum zeigen, und dort ist "Mittel" die Vorgabe.
  *
  * Ein reiner Datumstext wird von Hand zerlegt statt durch Date geschickt:
  * "2026-01-23" wäre dort UTC-Mitternacht und fiele westlich von Greenwich auf
