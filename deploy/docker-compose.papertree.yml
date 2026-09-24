@@ -12,7 +12,7 @@
 services:
   papertree:
     build: ..
-    image: papertree:${PAPERTREE_VERSION:-0.2.0}
+    image: papertree:${PAPERTREE_VERSION:-0.3.0}
     container_name: ${PAPERTREE_CONTAINER:-papertree}
     restart: unless-stopped
     environment:

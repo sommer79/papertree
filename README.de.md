@@ -4,7 +4,7 @@ Eine nur lesende Navigations- und Leseoberfläche über Paperless-ngx. Ansichten
 liegen als Baum in PaperTree selbst; Paperless bleibt die Quelle der Wahrheit
 für die Dokumente.
 
-Stand: **Stufe 1 und 2 umgesetzt** (Version 0.2.0). Die Anforderungen stehen im
+Stand: **Stufe 1 und 2 umgesetzt** (Version 0.3.0). Die Anforderungen stehen im
 Dokument „PaperTree – Anforderungen"; die Kürzel A1–A7, F1–F9 und N1–N6 in den
 Quelldateien verweisen darauf.
 
@@ -33,14 +33,24 @@ Quelldateien verweisen darauf.
   Tags, Korrespondenten, Dokumenttypen, Speicherpfade, Datumsfelder und
   Zusatzfelder mit den Operatoren ihres Datentyps. Live-Trefferzahl inklusive
 - Übernahme eines Filters aus einem kopierten Paperless-Link
-- Dokumentliste mit wählbaren Spalten, Sortierung und Blättern; Kachelansicht
+- Dokumentliste mit wählbaren Spalten, Sortierung und Blättern;
+  Kachelansicht. Ein Klick auf einen Tag verengt die Liste darauf – der
+  Filter steht in der Adresse, lässt sich also weitergeben und verändert
+  den gespeicherten Ordner nicht
+- **Ein Symbol je Ordner**, aus gut zweitausend, nach Themen durchsuchbar
+  in der Sprache der Oberfläche
 - Detailansicht mit eingebautem PDF-Betrachter, Download und dem Knopf
   „In Paperless öffnen"
 - Volltextsuche global und innerhalb eines Ordners
 - Dashboard mit den Ordnern, die man dort haben will
+- **Einstellungen für Administratoren**: je Tag ein Symbol, das in den
+  Listen an die Stelle der Kurzform tritt, und je Korrespondent ein Logo,
+  klein vor dem Namen und gross in der Ecke der Dokumentansicht. Beides
+  gilt nur in PaperTree; in Paperless ändert sich nichts
 - Fünf Sprachen – Deutsch, Englisch, Französisch, Italienisch und Spanisch –
   aus den Einstellungen des Benutzers in Paperless; alles andere bekommt
-  Englisch
+  Englisch. Das Datum folgt der dort eingestellten Datumsanzeige, immer in
+  der mittleren Form
 - Bedienbar auf dem Handy
 
 Bewusst nicht enthalten: jede Änderung an Paperless-Daten, die Anzeige, in
@@ -75,6 +85,13 @@ schreibt das Datum mit der dort eingestellten Datumssprache. Zwei
 Einstellungen für dieselbe Sache laufen auseinander, und niemand sucht sie an
 zwei Orten. Eine Sprache, die PaperTree nicht hat, bekommt Englisch.
 
+**Das Aussehen gilt für alle, der Baum nicht.** Tag-Symbole und
+Korrespondenten-Logos sehen für jeden gleich aus und werden von einem
+Administrator gepflegt; geprüft wird das im Server, die Oberfläche blendet
+nur aus, was ohnehin abgewiesen würde. Ein hochgeladenes Logo wird an seinen
+Magic Bytes erkannt, nicht am Dateinamen, und ein SVG mit Skript wird
+abgewiesen – es liefe sonst im Browser jedes Kollegen.
+
 ## Aufbau
 
 ```
@@ -83,11 +100,13 @@ app/tree.py         Knoten, Vererbung, Abfragepläne, Referenzprüfung
 app/groups.py       Dynamische Unterordner: Werte ermitteln, Gruppe als Filtersatz
 app/documents.py    Pläne ausführen: direkt oder über Dokument-IDs
 app/paperless.py    Der lesende Zugang – Whitelist und Cookie-Durchleitung
-app/db.py           SQLite: nur der Baum, mit Schema-Wandlungen
+app/sprache.py      Welche Sprache und Datumsform Paperless nennt
+app/logos.py        Logos der Korrespondenten: Typprüfung, Ablage, SVG-Abwehr
+app/db.py           SQLite: der Baum, Tag-Symbole, Logo-Zuordnungen
 app/main.py         HTTP-Schnittstelle und Auslieferung
 web/                Oberfläche, ES-Module ohne Build-Kette
 web/sprachen/       Je Sprache ein Katalog, schlichtes JSON
-tests/              74 Prüfungen, ohne Paperless und ohne Netz
+tests/              78 Prüfungen, ohne Paperless und ohne Netz
 ```
 
 Eine dynamische Gruppe ist am Ende nur ein weiterer Filtersatz. Darum
@@ -242,6 +261,11 @@ Aus der Installation ausgelesen, nicht geraten:
   tief und zwanzig Bedingungen
 - Operatoren je Zusatzfeldtyp aus `CustomFieldQueryParser.EXPR_BY_CATEGORY`
 - `fields=id` wird unterstützt, `max_page_size` ist 100000
+- `ui_settings` nennt, wer angemeldet ist, ob er Vollzugriff hat, die
+  Anzeigesprache als `settings.language` und die Datumssprache verschachtelt
+  unter `settings.date_display.date_locale` – nicht unter dem flachen Namen,
+  den das Frontend verwendet. Dort kann der Sonderwert `iso-8601` stehen, der
+  keine Sprache ist, sondern eine Schreibweise
 - Die Volltextsuche läuft über Tantivy und kennt `query`, `text`,
   `title_search` und `more_like_id`. Paperless lässt genau einen davon je
   Abfrage zu, wendet die übrigen Filter aber davor an – `filters.verschmelzen`

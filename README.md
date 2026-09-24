@@ -4,7 +4,7 @@ A read-only navigation and reading layer on top of Paperless-ngx. Views live
 as a tree inside PaperTree; Paperless stays the source of truth for the
 documents themselves.
 
-Status: **stages 1 and 2 implemented** (version 0.2.0). The requirements live
+Status: **stages 1 and 2 implemented** (version 0.3.0). The requirements live
 in the document "PaperTree – Anforderungen"; the markers A1–A7, F1–F9 and
 N1–N6 in the source files refer to it.
 
@@ -32,13 +32,22 @@ five languages; the code, comments and command-line flags are German.*
   correspondents, document types, storage paths, date fields and custom
   fields with the operators of their data type. Live match count included
 - Adopting a filter from a copied Paperless link
-- Document list with selectable columns, sorting and paging; tile view
+- Document list with selectable columns, sorting and paging; tile view.
+  A click on a tag narrows the list to it — the filter lives in the URL,
+  so it can be shared and leaves the stored folder alone
+- **An icon per folder**, chosen from some two thousand, searchable by
+  topic in the language of the interface
 - Detail view with a built-in PDF viewer, download and an "open in Paperless"
   button
 - Full-text search, globally and within a folder
 - A dashboard with the folders you want on it
+- **Settings for administrators**: an icon per tag, which replaces the
+  shortened name in the lists, and a logo per correspondent, shown small
+  in front of the name and large in the corner of the document view. Both
+  apply in PaperTree only; nothing changes in Paperless
 - Five languages – German, English, French, Italian and Spanish – taken
-  from the user's own Paperless settings, with English for anything else
+  from the user's own Paperless settings, with English for anything else.
+  Dates follow the date locale set there, always in the medium form
 - Usable on a phone
 
 Deliberately absent: any change to Paperless data, showing which other
@@ -72,6 +81,13 @@ date locale set there. Two settings for the same thing drift apart, and
 nobody looks for them in two places. A language PaperTree does not have
 gets English.
 
+**Appearance is shared, the tree is not.** Tag icons and correspondent
+logos look the same for everyone and are maintained by an administrator;
+the server checks that, the interface merely hides what would be refused
+anyway. An uploaded logo is checked by its magic bytes rather than its
+file name, and an SVG carrying a script is rejected — it would otherwise
+run in the browser of every colleague.
+
 ## Layout
 
 ```
@@ -80,11 +96,13 @@ app/tree.py         Nodes, inheritance, query plans, reference checks
 app/groups.py       Dynamic subfolders: finding values, group as a filter set
 app/documents.py    Executing plans: directly or via document IDs
 app/paperless.py    The read-only access - whitelist and cookie pass-through
-app/db.py           SQLite: the tree only, with schema migrations
+app/sprache.py      Which language and date format Paperless reports
+app/logos.py        Correspondent logos: type check, storage, SVG defence
+app/db.py           SQLite: the tree, tag icons, logo assignments
 app/main.py         HTTP interface and serving
 web/                Interface, ES modules without a build chain
 web/sprachen/       One catalogue per language, plain JSON
-tests/              74 checks, without Paperless and without a network
+tests/              78 checks, without Paperless and without a network
 ```
 
 A dynamic group is, in the end, just another filter set. That is why
@@ -237,6 +255,11 @@ Read out of the installation, not guessed:
 - Operators per custom field type from
   `CustomFieldQueryParser.EXPR_BY_CATEGORY`
 - `fields=id` is supported, `max_page_size` is 100000
+- `ui_settings` reports who is signed in, whether they are a superuser, the
+  display language as `settings.language`, and the date locale nested in
+  `settings.date_display.date_locale` — not under the flat name the frontend
+  uses. That locale can carry the special value `iso-8601`, which is a
+  notation rather than a language
 - Full-text search runs on Tantivy and knows `query`, `text`, `title_search`
   and `more_like_id`. Paperless allows exactly one of them per request but
   applies the remaining filters beforehand — `filters.verschmelzen` sticks to
