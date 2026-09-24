@@ -1,101 +1,101 @@
 # PaperTree
 
-Eine nur lesende Navigations- und Leseoberfläche über Paperless-ngx. Ansichten
-liegen als Baum in PaperTree selbst; Paperless bleibt die Quelle der Wahrheit
-für die Dokumente.
+A read-only navigation and reading layer on top of Paperless-ngx. Views live
+as a tree inside PaperTree; Paperless stays the source of truth for the
+documents themselves.
 
-Stand: **Stufe 1 und 2 umgesetzt** (Version 0.2.0). Die Anforderungen stehen im
-Dokument „PaperTree – Anforderungen"; die Kürzel A1–A7, F1–F9 und N1–N6 in den
-Quelldateien verweisen darauf.
+Status: **stages 1 and 2 implemented** (version 0.2.0). The requirements live
+in the document "PaperTree – Anforderungen"; the markers A1–A7, F1–F9 and
+N1–N6 in the source files refer to it.
 
-## Was PaperTree kann
+*Deutsche Fassung: [README.de.md](README.de.md). The code, comments and
+command-line flags are German — this file is the translation, not a separate
+project.*
 
-- Ordnerbaum, beliebig tief, mit den zwei Schaltern **eigener Filter** und
-  **Unterordner einbeziehen** – daraus ergeben sich alle vier Anzeigearten
-  einschliesslich reiner Navigation
-- Ordner verschieben und sortieren: per Ziehen und Ablegen am Rechner (Linie
-  oben oder unten = Geschwister, Rahmen = Unterordner, freie Fläche = oberste
-  Ebene), und über das Ordnermenü sowie das Feld „Übergeordneter Ordner" auch
-  am Handy
-- **Dynamische Unterordner**: ein Ordner kann seine Unterordner aus den
-  vorhandenen Werten aufspannen – nach Jahr, Korrespondent, Dokumenttyp, Tag,
-  Speicherpfad oder einem Zusatzfeld. Kommt ein Wert dazu, erscheint der
-  Unterordner von selbst. Von Hand angelegte Unterordner bleiben daneben
-  bestehen
-- **Export und Import des Baums** als JSON
-- Filtervererbung entlang des Baums, je Ordner abschaltbar; der effektive
-  Filter ist im Editor sichtbar
-- Aggregation über Unterordner. Damit kann PaperTree das ODER über
-  verschiedene Kriterien, das die Paperless-API in einer Abfrage nicht kennt
-- Ansichten-Editor, der sich aus den Metadaten von Paperless selbst aufbaut:
-  Tags, Korrespondenten, Dokumenttypen, Speicherpfade, Datumsfelder und
-  Zusatzfelder mit den Operatoren ihres Datentyps. Live-Trefferzahl inklusive
-- Übernahme eines Filters aus einem kopierten Paperless-Link
-- Dokumentliste mit wählbaren Spalten, Sortierung und Blättern; Kachelansicht
-- Detailansicht mit eingebautem PDF-Betrachter, Download und dem Knopf
-  „In Paperless öffnen"
-- Volltextsuche global und innerhalb eines Ordners
-- Dashboard mit den Ordnern, die man dort haben will
-- Bedienbar auf dem Handy
+## What PaperTree does
 
-Bewusst nicht enthalten: jede Änderung an Paperless-Daten, die Anzeige, in
-welchen anderen Ordnern ein Dokument ebenfalls liegt (N5), und das
-Veröffentlichen eines Ordners als Paperless-Ansicht (O1, noch nicht
-entschieden).
+- A folder tree, nested as deep as you like, with two switches per folder —
+  **own filter** and **include subfolders**. Between them they give all four
+  display modes, including pure navigation
+- Moving and sorting folders: drag and drop on the desktop (line above or
+  below = sibling, outline = child, empty space = top level), and on a phone
+  through the folder menu and the "parent folder" field
+- **Dynamic subfolders**: a folder can derive its children from the values
+  that actually occur — by year, correspondent, document type, tag, storage
+  path or a custom field. When a new value shows up, the subfolder appears by
+  itself. Hand-made subfolders continue to exist alongside them
+- **Export and import of the tree** as JSON
+- Filter inheritance along the tree, switchable per folder; the effective
+  filter is visible in the editor
+- Aggregation across subfolders. This is how PaperTree manages an OR across
+  different criteria, which the Paperless API cannot express in a single query
+- A view editor built from the metadata of Paperless itself: tags,
+  correspondents, document types, storage paths, date fields and custom
+  fields with the operators of their data type. Live match count included
+- Adopting a filter from a copied Paperless link
+- Document list with selectable columns, sorting and paging; tile view
+- Detail view with a built-in PDF viewer, download and an "open in Paperless"
+  button
+- Full-text search, globally and within a folder
+- A dashboard with the folders you want on it
+- Usable on a phone
 
-## Grundsätze, die im Code verankert sind
+Deliberately absent: any change to Paperless data, showing which other
+folders a document also appears in (N5), and publishing a folder as a
+Paperless view (O1, not decided yet).
 
-**Nur lesend (A1).** `app/paperless.py` ist die einzige Stelle, die Paperless
-erreicht. Sie schickt ausschliesslich GET und prüft jeden Pfad gegen eine
-Whitelist. Ein Fehler in der Oberfläche kann in Paperless nichts verändern.
+## Principles anchored in the code
 
-**Die Anmeldung gehört dem Benutzer (A2).** PaperTree besitzt kein Token,
-sondern leitet den Session-Cookie weiter. Wer in Paperless nicht angemeldet
-ist, sieht nichts; die Berechtigungen von Paperless gelten unverändert. Darum
-muss PaperTree unter derselben Domain laufen.
+**Read-only (A1).** `app/paperless.py` is the only place that reaches
+Paperless. It sends nothing but GET and checks every path against a
+whitelist. A bug in the interface cannot change anything in Paperless.
 
-**Keine Kopie der Dokumente (A3).** Vorschau und Download laufen als Strom
-durch. Zwischengespeichert wird nur die Reihenfolge der Dokument-IDs, je
-Benutzer und Sortierung, für 60 Sekunden.
+**The login belongs to the user (A2).** PaperTree holds no token; it passes
+the session cookie through. Anyone not logged into Paperless sees nothing,
+and the Paperless permissions apply unchanged. This is why PaperTree has to
+run under the same domain.
 
-**Filter sind Query-Parameter (A4).** PaperTree baut die Regeltypen von
-Paperless nicht nach. Ein neuer Filter in Paperless funktioniert damit sofort.
+**No copy of the documents (A3).** Preview and download are streamed through.
+The only thing cached is the order of the document IDs, per user and sort
+order, for 60 seconds.
 
-**Ein Baum je Benutzer (A7).** Jede Abfrage der Datenbank nennt die
-Benutzerkennung.
+**Filters are query parameters (A4).** PaperTree does not reimplement the
+rule types of Paperless. A new filter in Paperless therefore works
+immediately.
 
-## Aufbau
+**One tree per user (A7).** Every database query names the user ID.
+
+## Layout
 
 ```
-app/filters.py      Erlaubte Parameter, Verschmelzen von Filtersätzen, Link-Import
-app/tree.py         Knoten, Vererbung, Abfragepläne, Referenzprüfung
-app/groups.py       Dynamische Unterordner: Werte ermitteln, Gruppe als Filtersatz
-app/documents.py    Pläne ausführen: direkt oder über Dokument-IDs
-app/paperless.py    Der lesende Zugang – Whitelist und Cookie-Durchleitung
-app/db.py           SQLite: nur der Baum, mit Schema-Wandlungen
-app/main.py         HTTP-Schnittstelle und Auslieferung
-web/                Oberfläche, ES-Module ohne Build-Kette
-tests/              64 Prüfungen, ohne Paperless und ohne Netz
+app/filters.py      Allowed parameters, merging filter sets, link import
+app/tree.py         Nodes, inheritance, query plans, reference checks
+app/groups.py       Dynamic subfolders: finding values, group as a filter set
+app/documents.py    Executing plans: directly or via document IDs
+app/paperless.py    The read-only access - whitelist and cookie pass-through
+app/db.py           SQLite: the tree only, with schema migrations
+app/main.py         HTTP interface and serving
+web/                Interface, ES modules without a build chain
+tests/              65 checks, without Paperless and without a network
 ```
 
-Eine dynamische Gruppe ist am Ende nur ein weiterer Filtersatz. Darum
-funktionieren Vererbung, Aggregation, Sortierung und die Suche im Ordner
-darin unverändert – und eine Prüfung stellt sicher, dass jeder erzeugte
-Gruppenfilter ausschliesslich Parameter nennt, die Paperless kennt.
+A dynamic group is, in the end, just another filter set. That is why
+inheritance, aggregation, sorting and search inside the folder keep working
+on it unchanged — and a check makes sure that every generated group filter
+names only parameters Paperless knows.
 
-### Warum Schichten
+### Why layers
 
-Die Vererbung verknüpft Filtersätze mit UND. Das ist nicht immer in einem Satz
-ausdrückbar: „hat einen der Tags A oder B" UND „hat einen der Tags C oder D"
-ist kein einzelnes `tags__id__in`. `filters.verschmelzen` legt darum zusammen,
-was zusammengeht – der häufige Fall, eine Abfrage – und lässt den Rest als
-eigene Schicht stehen. Mehrere Schichten bedeuten: PaperTree holt die
-Dokument-IDs je Schicht und bildet die Schnittmenge. Die Vereinigung über
-Unterordner läuft genauso.
+Inheritance combines filter sets with AND. That cannot always be expressed in
+a single set: "has one of the tags A or B" AND "has one of the tags C or D"
+is not a single `tags__id__in`. So `filters.verschmelzen` merges what can be
+merged — the common case, one query — and leaves the rest standing as its own
+layer. Several layers mean PaperTree fetches the document IDs per layer and
+intersects them. The union across subfolders works the same way.
 
-## Betrieb
+## Running it
 
-Voraussetzung ist ein laufendes Paperless-ngx in Docker.
+You need a running Paperless-ngx in Docker.
 
 ```bash
 git clone https://github.com/sommer79/papertree.git
@@ -103,96 +103,97 @@ cd papertree
 ./deploy/install.sh
 ```
 
-Das ist alles – der Installer führt durch beide Teile der Einrichtung:
+That is all — the installer walks through both halves of the setup:
 
-**1. Container.** Er sucht sich zusammen, was er braucht: den
-Paperless-Container (erkannt am Image, nicht am Namen), dessen Docker-Netz,
-die interne und die öffentliche Adresse und einen freien Port. Das Gefundene
-steht als Vorgabe in jeder Abfrage, Enter übernimmt, jeder Wert lässt sich
-überschreiben. Geschrieben wird erst nach einer Bestätigung, und zwar nach
-`deploy/.env`; die Compose-Datei selbst bleibt unangetastet. Danach baut und
-startet er den Container und prüft nicht nur, ob PaperTree antwortet,
-sondern auch, ob es Paperless erreicht.
+**1. The container.** It works out what it needs: the Paperless container
+(recognised by its image, not its name), that container's Docker network, the
+internal and the public address, and a free port. What it found is offered as
+the default in every prompt, Enter accepts it, and every value can be
+overridden. Nothing is written until you confirm, and then only to
+`deploy/.env`; the compose file itself stays untouched. After that it builds
+and starts the container and checks not only whether PaperTree answers, but
+whether it can reach Paperless.
 
-**2. Reverse Proxy.** PaperTree hört absichtlich nur auf `127.0.0.1` und
-muss unter **derselben Adresse wie Paperless** ausgeliefert werden – nur
-dann gilt dessen Sitzungs-Cookie, und ohne den ist niemand angemeldet.
-Findet der Installer nginx, bietet er an, den nötigen Block selbst
-einzutragen: mit Sicherung, anschliessendem `nginx -t` und Neuladen. Wird
-die Datei dabei beanstandet, spielt er die Sicherung zurück, statt eine
-kaputte Konfiguration stehen zu lassen.
+**2. The reverse proxy.** PaperTree deliberately listens on `127.0.0.1` only,
+and it has to be served under **the same address as Paperless** — only then
+does the Paperless session cookie apply, and without it nobody is logged in.
+If the installer finds nginx, it offers to insert the necessary block itself:
+with a backup, a following `nginx -t`, and a reload. If nginx objects to the
+file, the backup is restored rather than leaving a broken configuration in
+place.
 
-Bei einem anderen Reverse Proxy – Apache, Caddy, Traefik – sagt er, was
-einzurichten ist: den Pfad `/papertree/` auf `http://127.0.0.1:<port>/`
-leiten, ungepuffert, damit die PDF-Vorschau als Strom ankommt. Als Vorlage
-dient `deploy/nginx-papertree.conf`.
+With a different reverse proxy — Apache, Caddy, Traefik — it tells you what
+to set up: route the path `/papertree/` to `http://127.0.0.1:<port>/`,
+unbuffered, so that the PDF preview arrives as a stream.
+`deploy/nginx-papertree.conf` serves as the template.
 
-Nur nachsehen, ohne irgendetwas zu ändern:
+To look without changing anything:
 
 ```bash
 ./deploy/install.sh --pruefen
 ```
 
-Den nginx-Schritt kann man auch einzeln nachholen:
+The nginx step can also be done on its own afterwards:
 
 ```bash
 sudo python3 deploy/nginx_einfuegen.py \
      --host paperless.example.org --pfad papertree --port 8080 --neuladen
 ```
 
-### Einstellungen
+### Settings
 
-| Variable | Vorgabe | Bedeutung |
+| Variable | Default | Meaning |
 | --- | --- | --- |
-| `PAPERTREE_PAPERLESS_URL` | `http://localhost:8000` | wohin PaperTree intern greift |
-| `PAPERTREE_PAPERLESS_PUBLIC_URL` | leer | wie Paperless für den Browser erreichbar ist |
-| `PAPERTREE_BASE_PATH` | `papertree` | nginx-Pfad |
-| `PAPERLESS_NETZ` | `paperless_default` | Docker-Netz des Paperless-Stacks |
-| `PAPERTREE_PORT` | `8080` | Port auf `127.0.0.1` |
-| `PAPERTREE_DB` | `/data/papertree.sqlite3` | die Datenbank mit dem Baum |
-| `PAPERTREE_LOGO_DIR` | neben der Datenbank | Ablage der Korrespondenten-Logos |
-| `PAPERTREE_LOGO_MAX_BYTES` | `1048576` | Obergrenze je Logo |
-| `PAPERTREE_INDEX_TTL` | `60` | Sekunden, die die ID-Reihenfolge gilt |
-| `PAPERTREE_TIMEOUT` | `30` | Zeitgrenze einer Abfrage an Paperless |
+| `PAPERTREE_PAPERLESS_URL` | `http://localhost:8000` | where PaperTree reaches Paperless internally |
+| `PAPERTREE_PAPERLESS_PUBLIC_URL` | empty | how Paperless is reachable for the browser |
+| `PAPERTREE_BASE_PATH` | `papertree` | the nginx path |
+| `PAPERLESS_NETZ` | `paperless_default` | Docker network of the Paperless stack |
+| `PAPERTREE_PORT` | `8080` | port on `127.0.0.1` |
+| `PAPERTREE_DB` | `/data/papertree.sqlite3` | the database holding the tree |
+| `PAPERTREE_LOGO_DIR` | next to the database | where correspondent logos are stored |
+| `PAPERTREE_LOGO_MAX_BYTES` | `1048576` | size limit per logo |
+| `PAPERTREE_INDEX_TTL` | `60` | seconds the cached ID order stays valid |
+| `PAPERTREE_TIMEOUT` | `30` | time limit for one request to Paperless |
 
-### Daten und Sicherung
+### Data and backup
 
-Alles, was PaperTree besitzt, liegt im Volume `papertree_daten`:
+Everything PaperTree owns lives in the volume `papertree_daten`:
 
-- `papertree.sqlite3` – Ordnerbaum, Tag-Symbole, Logo-Zuordnungen
-- `logos/` – die hochgeladenen Bilddateien
+- `papertree.sqlite3` – folder tree, tag icons, logo assignments
+- `logos/` – the uploaded image files
 
-Der Volume-Name steht fest in der Compose-Datei und hängt nicht am
-Projektnamen. Ohne diesen festen Namen stellte Compose den Projektnamen
-voran, und der kommt aus dem Verzeichnis der Compose-Datei – aus einem
-anderen Ordner gestartet entstünde ein zweites, leeres Volume, und der
-Ordnerbaum schiene verloren.
+The volume name is fixed in the compose file and does not depend on the
+project name. Without that fixed name Compose would prepend the project name,
+which comes from the directory of the compose file — started from a different
+folder, a second, empty volume would appear and the folder tree would seem to
+be gone.
 
-Gesichert wird mit `deploy/papertree-sichern.sh`. Das Skript legt eine in
-sich stimmige Kopie der Datenbank an – über die Online-Backup-Schnittstelle
-von SQLite, denn eine einfache Dateikopie wäre im WAL-Modus womöglich
-unvollständig – und packt sie mit den Logos in ein Archiv:
+Backups are made with `deploy/papertree-sichern.sh`. The script takes a
+self-consistent copy of the database — through the online backup interface of
+SQLite, because a plain file copy might be incomplete in WAL mode — and packs
+it together with the logos into an archive:
 
 ```bash
 sudo install -m 755 deploy/papertree-sichern.sh /usr/local/sbin/papertree-sichern
-papertree-sichern /pfad/zum/sicherungsordner
+papertree-sichern /path/to/backup/folder
 ```
 
-Wer Paperless schon per systemd sichert, hängt PaperTree mit einem Drop-in
-an denselben Dienst, statt einen eigenen Zeitgeber zu pflegen:
+If you already back Paperless up through systemd, attach PaperTree to the
+same service with a drop-in instead of maintaining a timer of your own:
 
 ```ini
-# /etc/systemd/system/<dienst>.service.d/papertree.conf
+# /etc/systemd/system/<service>.service.d/papertree.conf
 [Service]
 ExecStart=/usr/local/sbin/papertree-sichern
 ```
 
-Bei `Type=oneshot` führt systemd mehrere `ExecStart` nacheinander aus.
+With `Type=oneshot`, systemd runs several `ExecStart` lines one after
+another.
 
-**Wichtig:** Eine Sicherung von Paperless erfasst diese Daten nicht. Der
-Ordnerbaum liegt allein hier.
+**Important:** a backup of Paperless does not cover this data. The folder
+tree exists here and nowhere else.
 
-## Entwicklung
+## Development
 
 ```bash
 python -m venv .venv
@@ -200,36 +201,36 @@ python -m venv .venv
 python -m unittest discover -s tests
 ```
 
-Die Prüfungen laufen ohne Paperless: `tests/test_kern.py` prüft Filtermodell
-und Baumlogik, `tests/test_ausfuehrung.py` das Zusammenführen über IDs gegen
-eine Attrappe.
+The tests run without Paperless: `tests/test_kern.py` checks the filter model
+and the tree logic, `tests/test_ausfuehrung.py` the merging via IDs against a
+stub.
 
-## Getroffene Annahmen über Paperless 3.1.3
+## Assumptions made about Paperless 3.1.3
 
-Aus der Installation ausgelesen, nicht geraten:
+Read out of the installation, not guessed:
 
-- 104 Filterparameter aus `DocumentFilterSet`
-- Sortierfelder aus `DocumentViewSet.ordering_fields`, dazu
+- 104 filter parameters from `DocumentFilterSet`
+- Sort fields from `DocumentViewSet.ordering_fields`, plus
   `custom_field_<id>`
-- `custom_field_query` versteht `AND`, `OR` und `NOT`, höchstens zehn Ebenen
-  tief und zwanzig Bedingungen
-- Operatoren je Zusatzfeldtyp aus `CustomFieldQueryParser.EXPR_BY_CATEGORY`
-- `fields=id` wird unterstützt, `max_page_size` ist 100000
-- Die Volltextsuche läuft über Tantivy und kennt `query`, `text`,
-  `title_search` und `more_like_id`. Paperless lässt genau einen davon je
-  Abfrage zu, wendet die übrigen Filter aber davor an – `filters.verschmelzen`
-  hält sich daran.
+- `custom_field_query` understands `AND`, `OR` and `NOT`, at most ten levels
+  deep and twenty conditions
+- Operators per custom field type from
+  `CustomFieldQueryParser.EXPR_BY_CATEGORY`
+- `fields=id` is supported, `max_page_size` is 100000
+- Full-text search runs on Tantivy and knows `query`, `text`, `title_search`
+  and `more_like_id`. Paperless allows exactly one of them per request but
+  applies the remaining filters beforehand — `filters.verschmelzen` sticks to
+  that
 
-## Lizenz
+## License
 
-Apache-Lizenz 2.0, siehe [LICENSE](LICENSE). Sie erlaubt Gebrauch, Änderung
-und Weitergabe, auch gewerblich, und schliesst eine ausdrückliche
-Patentlizenz ein.
+Apache License 2.0, see [LICENSE](LICENSE). It permits use, modification and
+redistribution, commercially as well, and includes an express patent licence.
 
-PaperTree spricht Paperless-ngx nur über dessen HTTP-Schnittstelle an und
-bindet keinen Code daraus ein. Die GPL von Paperless erstreckt sich deshalb
-nicht auf dieses Projekt.
+PaperTree talks to Paperless-ngx through its HTTP interface only and embeds
+no code from it. The GPL of Paperless therefore does not extend to this
+project.
 
-Die mitgelieferten Bibliotheken unter `web/vendor/` behalten ihre eigenen
-Lizenzen; welche das sind und wo die Texte liegen, steht in
-[NOTICE](NOTICE) und in [web/vendor/HERKUNFT.md](web/vendor/HERKUNFT.md).
+The bundled libraries under `web/vendor/` keep their own licences; which
+ones they are and where the texts live is recorded in [NOTICE](NOTICE) and in
+[web/vendor/HERKUNFT.md](web/vendor/HERKUNFT.md).
