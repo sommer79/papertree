@@ -39,12 +39,16 @@ def kataloge() -> dict:
 
 
 def quelldateien():
-    for ordner, unter, dateien in os.walk(WEB):
-        if "vendor" in ordner or "sprachen" in ordner:
-            continue
-        for name in sorted(dateien):
-            if name.endswith((".js", ".html")):
-                yield os.path.join(ordner, name)
+    # Die Oberfläche – und der Server, der zwei Seiten selbst schreibt: die
+    # Fehlerseite der Vorschau und die des Downloads holen ihre Texte aus
+    # denselben Katalogen.
+    for wurzel in (WEB, os.path.join(WURZEL, "app")):
+        for ordner, unter, dateien in os.walk(wurzel):
+            if "vendor" in ordner or "sprachen" in ordner or "__pycache__" in ordner:
+                continue
+            for name in sorted(dateien):
+                if name.endswith((".js", ".html", ".py")):
+                    yield os.path.join(ordner, name)
 
 
 def verwendete_schluessel(namensraeume: set) -> set:

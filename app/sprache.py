@@ -11,6 +11,8 @@ lassen sie sich ohne laufendes Paperless prüfen.
 """
 from __future__ import annotations
 
+import json
+import os
 import re
 
 # Die Oberfläche gibt es in diesen Sprachen; alles andere bekommt Englisch.
@@ -85,3 +87,36 @@ def aus_einstellungen(gewaehlt: dict | None) -> dict:
         "datumssprache": (datumssprache_waehlen(_datumswert(werte))
                           or datumssprache_waehlen(roh_sprache)),
     }
+
+
+# --- Texte für die wenigen Seiten, die der Server selbst schreibt -----------
+# Sonst kommt jeder Text aus dem Browser. Zwei Fälle gehen aber direkt an den
+# Benutzer, ohne dass die Oberfläche dazwischenliegt: die Vorschau im Rahmen
+# und der Download. Beide holen ihre Texte hier – aus denselben Dateien wie
+# der Rest, damit es nicht zwei Quellen für dieselbe Formulierung gibt.
+_SPRACHORDNER = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "web", "sprachen")
+_KATALOGE: dict = {}
+
+
+def _katalog(sprache: str) -> dict:
+    if sprache not in _KATALOGE:
+        pfad = os.path.join(_SPRACHORDNER, sprache + ".json")
+        try:
+            with open(pfad, encoding="utf-8") as datei:
+                _KATALOGE[sprache] = json.load(datei)
+        except (OSError, ValueError):
+            _KATALOGE[sprache] = {}
+    return _KATALOGE[sprache]
+
+
+def text(sprache: str, schluessel: str) -> str:
+    """Ein Text in der Sprache des Benutzers, sonst auf Englisch.
+
+    Fehlt er in beiden, kommt der Schlüssel zurück – das fällt auf, statt
+    stillschweigend eine leere Stelle zu hinterlassen.
+    """
+    gewaehlt = _katalog(sprache_waehlen(sprache) or "en")
+    if schluessel in gewaehlt:
+        return gewaehlt[schluessel]
+    return _katalog("en").get(schluessel, schluessel)

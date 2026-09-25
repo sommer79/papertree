@@ -285,6 +285,8 @@
   "fehler.verschieben": "Verschieben nicht möglich: {grund}",
   "fehler.export": "Export fehlgeschlagen: {grund}",
   "fehler.import": "Import fehlgeschlagen: {grund}",
+  "fehler.dateiNichtLesbarTitel": "Die Datei ist gerade nicht lesbar",
+  "fehler.dateiNichtLesbar": "Paperless kommt im Moment nicht an die Originaldatei. Das liegt am Speicher dahinter, nicht am Dokument – in einer Minute noch einmal versuchen.",
 
   "thema.geld": "Geld und Bank",
   "thema.geld.woerter": "bank, konto, kontoauszug, zahlung, überweisung, sparen, kredit, kreditkarte, bargeld, münzen, budget, finanzen",

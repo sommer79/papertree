@@ -285,6 +285,8 @@
   "fehler.verschieben": "Cannot move: {grund}",
   "fehler.export": "Export failed: {grund}",
   "fehler.import": "Import failed: {grund}",
+  "fehler.dateiNichtLesbarTitel": "The file cannot be read right now",
+  "fehler.dateiNichtLesbar": "Paperless cannot reach the original file at the moment. That is the storage behind it, not the document — try again in a minute.",
 
   "thema.geld": "Money and banking",
   "thema.geld.woerter": "bank, account, statement, payment, transfer, savings, loan, credit card, cash, coins, budget, finance",

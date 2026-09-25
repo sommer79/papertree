@@ -130,8 +130,12 @@ export async function pdfZeigen(behaelter, url) {
     }
   } catch (fehler) {
     meldung.className = 'hinweiskasten fehler';
-    meldung.textContent = t('pdf.fehler', {
-      grund: fehler && fehler.message ? fehler.message : fehler });
+    // 502 heisst: Paperless hat das Dokument, kommt aber nicht an die Datei.
+    // Das ist kein Fehler der Oberfläche und geht meist von selbst vorüber –
+    // der technische Grund hilft hier niemandem weiter.
+    meldung.textContent = (fehler && fehler.status >= 500)
+      ? t('fehler.dateiNichtLesbar')
+      : t('pdf.fehler', { grund: fehler && fehler.message ? fehler.message : fehler });
   }
 
   return () => {

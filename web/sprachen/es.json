@@ -285,6 +285,8 @@
   "fehler.verschieben": "No se puede mover: {grund}",
   "fehler.export": "La exportación falló: {grund}",
   "fehler.import": "La importación falló: {grund}",
+  "fehler.dateiNichtLesbarTitel": "El archivo no se puede leer ahora mismo",
+  "fehler.dateiNichtLesbar": "Paperless no alcanza el archivo original en este momento. Es el almacenamiento que hay detrás, no el documento — inténtelo de nuevo en un minuto.",
 
   "thema.geld": "Dinero y banca",
   "thema.geld.woerter": "banco, cuenta, extracto, pago, transferencia, ahorro, crédito, tarjeta de crédito, efectivo, monedas, presupuesto, finanzas",

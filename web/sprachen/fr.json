@@ -285,6 +285,8 @@
   "fehler.verschieben": "Déplacement impossible : {grund}",
   "fehler.export": "Échec de l'export : {grund}",
   "fehler.import": "Échec de l'import : {grund}",
+  "fehler.dateiNichtLesbarTitel": "Le fichier n'est pas lisible pour l'instant",
+  "fehler.dateiNichtLesbar": "Paperless n'atteint pas le fichier d'origine en ce moment. Cela vient du stockage, pas du document — réessayez dans une minute.",
 
   "thema.geld": "Argent et banque",
   "thema.geld.woerter": "banque, compte, relevé, paiement, virement, épargne, crédit, carte de crédit, espèces, pièces, budget, finances",

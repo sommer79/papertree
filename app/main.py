@@ -8,17 +8,19 @@ und dort nur der Baum (A5, A7).
 from __future__ import annotations
 
 import hashlib
+import html
 import os
 import time
 from contextlib import asynccontextmanager
 
 import httpx
 from fastapi import Body, FastAPI, File, Request, UploadFile
-from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
+from fastapi.responses import (FileResponse, HTMLResponse, JSONResponse,
+                               StreamingResponse)
 from fastapi.staticfiles import StaticFiles
 from starlette.background import BackgroundTask
 
-from . import VERSION, db, documents, filters, groups, logos, paperless
+from . import VERSION, db, documents, filters, groups, logos, paperless, sprache
 from .config import einstellungen
 from .tree import Baum, Plan, ausfuehrungsart, referenzen
 
@@ -485,6 +487,41 @@ async def metadaten(anfrage: Request, dokument_id: int):
 _DURCHLEITEN = ("content-type", "content-length", "content-disposition", "last-modified")
 
 
+# Eine schlichte Seite statt einer JSON-Zeile: Vorschau und Download landen
+# direkt im Browser – im Rahmen der Dokumentansicht oder als eigener Aufruf.
+# Dort sah der Benutzer bisher {"fehler":"paperless","status":500} und musste
+# raten, was das bedeutet.
+_FEHLERSEITE = """<!DOCTYPE html>
+<html lang="{sprache}"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{titel}</title><style>
+ :root {{ color-scheme: light dark; }}
+ body {{ margin: 0; display: flex; align-items: center; justify-content: center;
+        min-height: 100vh; padding: 24px; box-sizing: border-box;
+        font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: #f6f7f9; color: #1c2430; }}
+ .kasten {{ max-width: 34em; text-align: center; }}
+ h1 {{ font-size: 17px; margin: 0 0 8px; }}
+ p {{ margin: 0; color: #5a6675; }}
+ @media (prefers-color-scheme: dark) {{
+   body {{ background: #171a1f; color: #e6e9ee; }}
+   p {{ color: #a3adba; }}
+ }}
+</style></head><body><div class="kasten">
+<h1>{titel}</h1><p>{text}</p></div></body></html>"""
+
+
+def _fehlerseite(person: dict, status: int) -> HTMLResponse:
+    holen = lambda schluessel: sprache.text(person.get("sprache") or "", schluessel)
+    seite = _FEHLERSEITE.format(
+        sprache=person.get("sprache") or "en",
+        titel=html.escape(holen("fehler.dateiNichtLesbarTitel")),
+        text=html.escape(holen("fehler.dateiNichtLesbar")),
+    )
+    # 502: der Fehler liegt hinter PaperTree, nicht in der Anfrage.
+    return HTMLResponse(seite, status_code=502 if status >= 500 else status)
+
+
 async def _weiterreichen(anfrage: Request, pfad: str, inline: bool):
     await _benutzer(anfrage)
     antwort = await _zugang(anfrage).strom(pfad)
@@ -503,7 +540,15 @@ async def _weiterreichen(anfrage: Request, pfad: str, inline: bool):
 @app.get("/api/dokumente/{dokument_id}/vorschau")
 async def vorschau_pdf(anfrage: Request, dokument_id: int):
     """Für den eingebauten PDF-Betrachter (F5.3)."""
-    return await _weiterreichen(anfrage, f"/api/documents/{dokument_id}/preview/", inline=True)
+    try:
+        return await _weiterreichen(anfrage, f"/api/documents/{dokument_id}/preview/",
+                                    inline=True)
+    except paperless.PaperlessFehler as fehler:
+        if fehler.status < 500:
+            raise
+        # Paperless hat das Dokument, kommt aber nicht an die Datei – meist
+        # weil der Speicher dahinter gerade nicht mitspielt.
+        return _fehlerseite(await _benutzer(anfrage), fehler.status)
 
 
 @app.get("/api/dokumente/{dokument_id}/bild")
@@ -514,7 +559,13 @@ async def vorschaubild(anfrage: Request, dokument_id: int):
 @app.get("/api/dokumente/{dokument_id}/datei")
 async def datei(anfrage: Request, dokument_id: int):
     """Download des Originals (F5.4)."""
-    return await _weiterreichen(anfrage, f"/api/documents/{dokument_id}/download/", inline=False)
+    try:
+        return await _weiterreichen(anfrage, f"/api/documents/{dokument_id}/download/",
+                                    inline=False)
+    except paperless.PaperlessFehler as fehler:
+        if fehler.status < 500:
+            raise
+        return _fehlerseite(await _benutzer(anfrage), fehler.status)
 
 
 # --- Darstellung von Tags und Korrespondenten (F7) ---------------------------
