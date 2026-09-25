@@ -27,6 +27,7 @@
 
   "dashboard.titel": "Dashboard",
   "dashboard.leer": "No folders on the dashboard yet. Switch on “Show on the PaperTree dashboard” in a folder's editor.",
+  "dashboard.neueste": "Most recent documents",
 
   "baum.leer": "No folders yet. Create the first one with “+ Folder”.",
   "baum.aufklappen": "Expand",
@@ -48,6 +49,9 @@
   "ordner.unbekannt": "This folder does not exist.",
   "ordner.bearbeiten": "Edit folder",
   "ordner.unterordnerNeu": "+ Subfolder",
+  "ordner.reiterNeu": "+ Tab",
+  "ordner.reiterAlle": "All documents",
+  "ordner.reiterBearbeiten": "Edit tab",
   "ordner.alleDokumente": "all documents",
   "ordner.plusAlleUnter": "plus all subfolders",
   "ordner.plusDirekteUnter": "plus the direct subfolders",
@@ -72,6 +76,7 @@
   "suche.treffer.other": "{anzahl} matches",
 
   "liste.spalte.titel": "Title",
+  "liste.spalte.titelKorrespondent": "Title / correspondent",
   "liste.spalte.korrespondent": "Correspondent",
   "liste.spalte.typ": "Type",
   "liste.spalte.speicherpfad": "Storage path",
@@ -89,10 +94,6 @@
   "liste.tagNurDiese": "{name} – show only these",
   "liste.tagFilterAus": "{name} – remove filter",
   "liste.inPaperlessDok": "Open in Paperless: {titel}",
-  "liste.sortAufAktiv": "Sorted ascending – click for descending",
-  "liste.sortAbAktiv": "Sorted descending – click for ascending",
-  "liste.sortNach": "Sort by {spalte}",
-  "liste.tagsNichtSortierbar": "Paperless cannot sort by tags",
   "liste.sortierung": "Sort order",
   "liste.seiteVon": "Page {seite} of {von}",
   "liste.vorherige": "Previous page",
@@ -182,6 +183,7 @@
   "editor.sortZusatzfeldAb": "Custom field: {name}, descending",
   "editor.seitengroesse": "Entries per page",
   "editor.aufDashboard": "Show on the PaperTree dashboard",
+  "editor.alsReiter": "Show as a tab in the parent folder — this folder then no longer appears in the tree",
 
   "gruppierung.keine": "— none, subfolders by hand —",
   "gruppierung.jahrErstellt": "Year (created)",

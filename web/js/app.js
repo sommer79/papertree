@@ -2,7 +2,7 @@
 import { api } from './api.js';
 import { stammLaden, stamm } from './stamm.js';
 import { baum, baumLaden, baumZeichnen, baumVerdrahten, fehlendeReferenzen,
-         gruppenVergessen, kinderVon, nachfahrenZahl, pfadVon,
+         gruppenVergessen, nachfahrenZahl, ordnerKinder, pfadVon, reiterVon,
          zaehlerVergessen } from './baum.js';
 import { listeZeichnen, markeChip, SPALTEN } from './liste.js';
 import { detailAufraeumen, detailZeichnen } from './detail.js';
@@ -10,9 +10,9 @@ import { editorOeffnen, editorVorbereiten } from './editor.js';
 import { beschreibe } from './kriterien.js';
 import { tooltipVerdrahten } from './tooltip.js';
 import { darstellung, darstellungLaden } from './darstellung.js';
-import { symboleLaden } from './symbole.js';
+import { symbolInhalt, symboleLaden, symbolSvg } from './symbole.js';
 import { einstellungenZeichnen } from './einstellungen.js';
-import { spracheEinrichten, t, textenSetzen, tn, zahlText } from './sprache.js';
+import { sprache, spracheEinrichten, t, textenSetzen, tn, zahlText } from './sprache.js';
 
 const inhalt = document.getElementById('inhalt');
 let ich = null;
@@ -38,6 +38,42 @@ function kasten(text, istFehler = false) {
   return p;
 }
 
+// Die Zeichen an den Knöpfen. Klein gehalten und ohne eigene Datei: es sind
+// vier Striche, dafür lohnt der Symbolsatz nicht.
+const ZEICHEN = {
+  ordner: 'M4 6.5a1.5 1.5 0 0 1 1.5-1.5h3.2l1.4 1.8h5.9a1.5 1.5 0 0 1 1.5 1.5v6.2'
+    + 'a1.5 1.5 0 0 1-1.5 1.5H5.5A1.5 1.5 0 0 1 4 14.5Z',
+  stift: 'M11.6 3.9a1.6 1.6 0 0 1 2.3 2.3l-7 7-3 .7.7-3Z',
+  reiter: 'M3.5 7.5h5l1.2-2h6.8v9a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1Z',
+};
+
+function zeichen(name, groesse = 15) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 20 20');
+  svg.setAttribute('width', String(groesse));
+  svg.setAttribute('height', String(groesse));
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '1.5');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  svg.setAttribute('aria-hidden', 'true');
+  const pfad = document.createElementNS(ns, 'path');
+  pfad.setAttribute('d', ZEICHEN[name]);
+  svg.append(pfad);
+  return svg;
+}
+
+/** Ein Knopf mit Zeichen davor. */
+function werkzeugknopf(name, text, beiKlick) {
+  const knopf = document.createElement('button');
+  knopf.className = 'knopf werkzeugknopf';
+  knopf.append(zeichen(name), document.createTextNode(text));
+  knopf.addEventListener('click', beiKlick);
+  return knopf;
+}
+
 function wegAuslesen() {
   const roh = (location.hash || '#/').replace(/^#/, '');
   const [pfad, anfrage] = roh.split('?');
@@ -49,8 +85,87 @@ function gehe(pfad) {
   location.hash = pfad;
 }
 
-// --- Dashboard (F7) ----------------------------------------------------------
-async function dashboard() {
+// --- Startseite (F7) ---------------------------------------------------------
+// Welche Spalten die Startseite zeigt, gehört zu keinem Ordner - es wird im
+// Browser gemerkt, wie die aufgeklappten Ordner im Baum.
+const SPALTEN_STARTSEITE = 'papertree.startseite.spalten';
+
+function startseitenSpalten() {
+  try {
+    const gemerkt = JSON.parse(localStorage.getItem(SPALTEN_STARTSEITE) || 'null');
+    if (Array.isArray(gemerkt) && gemerkt.length) return gemerkt.filter((s) => SPALTEN[s]);
+  } catch (_) { /* privates Fenster: dann die Vorgabe */ }
+  return ['title', 'correspondent', 'document_type', 'tags', 'created'];
+}
+
+// Welche Kachel gerade gezogen wird. Wie im Baum reicht eine Variable: es
+// kann immer nur eine sein.
+let gezogeneKachel = null;
+
+/**
+ * Kacheln lassen sich umsortieren.
+ *
+ * Abgelegt wird vor oder hinter der Kachel, über der die Maus steht – je
+ * nachdem, auf welcher Hälfte sie loslässt. Gespeichert wird erst beim
+ * Ablegen, mit einem Aufruf für die ganze Reihe.
+ */
+function kachelZiehen(kachel, gitter) {
+  kachel.draggable = true;
+
+  kachel.addEventListener('dragstart', (ereignis) => {
+    gezogeneKachel = kachel;
+    ereignis.dataTransfer.effectAllowed = 'move';
+    // Firefox startet den Vorgang nur mit einer Nutzlast.
+    ereignis.dataTransfer.setData('text/plain', kachel.dataset.knoten);
+    kachel.classList.add('zieht');
+  });
+
+  kachel.addEventListener('dragend', () => {
+    gezogeneKachel = null;
+    kachel.classList.remove('zieht');
+    for (const k of gitter.children) k.classList.remove('ziel-davor', 'ziel-danach');
+  });
+
+  kachel.addEventListener('dragover', (ereignis) => {
+    if (!gezogeneKachel || gezogeneKachel === kachel) return;
+    ereignis.preventDefault();
+    ereignis.dataTransfer.dropEffect = 'move';
+    const masse = kachel.getBoundingClientRect();
+    const davor = ereignis.clientX < masse.left + masse.width / 2;
+    kachel.classList.toggle('ziel-davor', davor);
+    kachel.classList.toggle('ziel-danach', !davor);
+  });
+
+  kachel.addEventListener('dragleave', () => {
+    kachel.classList.remove('ziel-davor', 'ziel-danach');
+  });
+
+  kachel.addEventListener('drop', async (ereignis) => {
+    ereignis.preventDefault();
+    ereignis.stopPropagation();
+    const masse = kachel.getBoundingClientRect();
+    const davor = ereignis.clientX < masse.left + masse.width / 2;
+    kachel.classList.remove('ziel-davor', 'ziel-danach');
+    if (!gezogeneKachel || gezogeneKachel === kachel) return;
+    // Erst im Bild verschieben, dann speichern: so folgt die Kachel sofort,
+    // auch wenn die Leitung langsam ist.
+    gitter.insertBefore(gezogeneKachel, davor ? kachel : kachel.nextSibling);
+    const ids = [...gitter.children].map((k) => Number(k.dataset.knoten));
+    gezogeneKachel = null;
+    try {
+      await api.dashboardReihenfolge(ids);
+      // Die geladenen Knoten nachziehen, damit ein Wechsel der Ansicht nicht
+      // die alte Reihenfolge zurückholt.
+      ids.forEach((id, stelle) => {
+        if (baum.nachId[id]) baum.nachId[id].dashboard_reihenfolge = stelle + 1;
+      });
+    } catch (fehler) {
+      alert(t('fehler.verschieben', { grund: fehler.message || fehler }));
+    }
+  });
+}
+
+async function dashboard(params) {
   const huelle = document.createElement('div');
   const kopf = document.createElement('div');
   kopf.className = 'titelzeile';
@@ -60,11 +175,12 @@ async function dashboard() {
   huelle.append(kopf);
 
   const gewaehlt = baum.knoten.filter((k) => k.auf_dashboard);
-  if (!gewaehlt.length) {
-    huelle.append(kasten(t('dashboard.leer')));
-    zeige(huelle);
-    return;
-  }
+  if (!gewaehlt.length) huelle.append(kasten(t('dashboard.leer')));
+
+  // Die Kacheln stehen in ihrer eigenen Reihenfolge, nicht in der des Baums:
+  // hier liegen Ordner aus verschiedenen Ebenen nebeneinander.
+  gewaehlt.sort((a, b) => (a.dashboard_reihenfolge || 0) - (b.dashboard_reihenfolge || 0)
+    || a.name.localeCompare(b.name, sprache()));
 
   const gitter = document.createElement('div');
   gitter.className = 'dashkacheln';
@@ -72,6 +188,14 @@ async function dashboard() {
     const kachel = document.createElement('a');
     kachel.className = 'karte dashkachel';
     kachel.href = '#/ordner/' + knoten.id;
+    kachel.dataset.knoten = knoten.id;
+
+    // Das Symbol des Ordners oben rechts – dasselbe wie im Baum.
+    const symbolfeld = document.createElement('span');
+    symbolfeld.className = 'dashsymbol';
+    symbolfeld.append(symbolSvg(knoten.symbol || '', 18));
+    if (knoten.symbol && !symbolInhalt(knoten.symbol)) symboleLaden();
+
     const zahl = document.createElement('div');
     zahl.className = 'zahl';
     zahl.textContent = '…';
@@ -80,14 +204,79 @@ async function dashboard() {
     const wo = document.createElement('div');
     wo.className = 'wo';
     wo.textContent = pfadVon(knoten.id).slice(0, -1).map((k) => k.name).join(' › ');
-    kachel.append(zahl, name, wo);
+    kachel.append(symbolfeld, zahl, name, wo);
+    kachelZiehen(kachel, gitter);
     gitter.append(kachel);
     api.anzahl(knoten.id)
       .then((ergebnis) => { zahl.textContent = zahlText(ergebnis.anzahl); })
       .catch(() => { zahl.textContent = '–'; });
   }
-  huelle.append(gitter);
+  if (gewaehlt.length) huelle.append(gitter);
+
+  // Der ganze Bestand, neueste zuerst - ohne Ordner, ohne Filter. Die Liste
+  // steht auch dann, wenn keine Ordner auf dem Dashboard liegen: dann ist sie
+  // das Einzige, was die Startseite zu zeigen hat.
+  const neueste = document.createElement('div');
+  neueste.className = 'neueste';
+  const ueberschrift = document.createElement('h2');
+  ueberschrift.textContent = t('dashboard.neueste');
+  neueste.append(ueberschrift);
+  const filterstelle = document.createElement('div');
+  const bereich = document.createElement('div');
+  bereich.append(laedt());
+  neueste.append(filterstelle, bereich);
+  huelle.append(neueste);
   zeige(huelle);
+
+  function wegMerken() {
+    const anfrage = params.toString();
+    const ziel = '#/dashboard' + (anfrage ? '?' + anfrage : '');
+    if (location.hash !== ziel) history.replaceState(null, '', ziel);
+  }
+
+  const suchfeld = listensuche(params, wegMerken, () => nachladen());
+  let spalten = startseitenSpalten();
+
+  async function nachladen() {
+    const gewaehlteTags = tagsAus(params);
+    filterstelle.innerHTML = '';
+    const leiste = filterLeiste(params, () => { wegMerken(); nachladen(); });
+    if (leiste) filterstelle.append(leiste);
+    try {
+      const ergebnis = await api.neueste({
+        page: Number(params.get('page') || 1),
+        page_size: 15,
+        ordering: params.get('ordering') || '-created',
+        q: params.get('q') || '',
+        tag: gewaehlteTags.join(','),
+      });
+      bereich.innerHTML = '';
+      bereich.append(listeZeichnen(ergebnis, spalten, {
+        gewaehlteTags,
+        suchfeld,
+        paperlessBasis: ich && ich.paperless,
+        beiSpalten: (neueSpalten) => {
+          spalten = neueSpalten;
+          try { localStorage.setItem(SPALTEN_STARTSEITE, JSON.stringify(neueSpalten)); }
+          catch (_) { /* dann gilt die Wahl nur für diesen Besuch */ }
+          nachladen();
+        },
+        beiTagKlick: (tagId) => tagUmschalten(params, tagId, nachladen),
+        beiSeite: (nummer) => { params.set('page', nummer); wegMerken(); nachladen(); },
+        beiSortierung: (feld) => {
+          params.set('ordering', feld);
+          params.set('page', 1);
+          wegMerken();
+          nachladen();
+        },
+      }));
+    } catch (fehler) {
+      bereich.innerHTML = '';
+      bereich.append(kasten(t('fehler.dokumenteListe', { grund: fehler.message }), true));
+    }
+  }
+
+  await nachladen();
 }
 
 // --- Ordner ------------------------------------------------------------------
@@ -95,11 +284,19 @@ async function ordnerZeigen(id, params) {
   const knoten = baum.nachId[id];
   if (!knoten) { zeige(kasten(t('ordner.unbekannt'), true)); return; }
 
+  // Ein Reiter zeigt den Kopf seines Elternordners: der ist der Behälter,
+  // die Reiter wechseln nur den Inhalt darunter. Bearbeitet wird trotzdem
+  // der Reiter selbst - im Baum steht er nicht mehr, hier ist der einzige
+  // Weg zu ihm.
+  const behaelter = (knoten.als_reiter && baum.nachId[knoten.eltern_id])
+    ? baum.nachId[knoten.eltern_id] : knoten;
+
   const huelle = document.createElement('div');
 
   const krumen = document.createElement('div');
   krumen.className = 'brotkrumen';
-  pfadVon(id).forEach((teil, n, alle) => {
+  krumen.append(zeichen('ordner', 16));
+  pfadVon(behaelter.id).forEach((teil, n, alle) => {
     if (n) krumen.append(document.createTextNode(' › '));
     if (n === alle.length - 1) {
       krumen.append(document.createTextNode(teil.name));
@@ -118,26 +315,30 @@ async function ordnerZeigen(id, params) {
   const kopf = document.createElement('div');
   kopf.className = 'titelzeile';
   const titel = document.createElement('h1');
-  titel.textContent = knoten.name;
+  titel.textContent = behaelter.name;
   const anzahlAnzeige = document.createElement('span');
   anzahlAnzeige.className = 'anzahl';
 
   const werkzeuge = document.createElement('div');
   werkzeuge.className = 'werkzeuge';
-
-  const bearbeiten = document.createElement('button');
-  bearbeiten.className = 'knopf';
-  bearbeiten.textContent = t('ordner.bearbeiten');
-  bearbeiten.addEventListener('click', () => ordnerBearbeiten(id));
-
-  const unterordner = document.createElement('button');
-  unterordner.className = 'knopf';
-  unterordner.textContent = t('ordner.unterordnerNeu');
-  unterordner.addEventListener('click', () => ordnerAnlegen(id));
-
-  werkzeuge.append(unterordner, bearbeiten);
+  // Angelegt wird immer im Behälter; bearbeitet wird, was gerade offen ist.
+  werkzeuge.append(
+    // Ordnerzeichen, nicht Plus: das Plus steht schon im Text.
+    werkzeugknopf('ordner', t('ordner.unterordnerNeu'), () => ordnerAnlegen(behaelter.id)),
+    werkzeugknopf('reiter', t('ordner.reiterNeu'), () => ordnerAnlegen(behaelter.id, true)),
+    werkzeugknopf('stift', t(knoten.als_reiter ? 'ordner.reiterBearbeiten' : 'ordner.bearbeiten'),
+                  () => ordnerBearbeiten(id)));
   kopf.append(titel, anzahlAnzeige, werkzeuge);
   huelle.append(kopf);
+
+  // Die Reiter des Behälters. Gibt es keine, fehlt die Leiste ganz - ein
+  // einzelner Reiter "Alle Dokumente" sagt nichts.
+  const reiter = reiterVon(behaelter.id);
+  if (reiter.length) {
+    huelle.append(reiterleiste(behaelter.id, id, reiter));
+    // Jeder Reiter trägt seine Zahl; neben dem Titel stünde sie ein zweites Mal.
+    anzahlAnzeige.hidden = true;
+  }
 
   // Was dieser Ordner zeigt, in Worten
   const worte = [];
@@ -161,7 +362,7 @@ async function ordnerZeigen(id, params) {
       t('ordner.fehlendeReferenzen', { was: fehlend.join(', ') }), true));
   }
 
-  const unterliste = kinderVon(id);
+  const unterliste = ordnerKinder(id);
   if (unterliste.length) {
     const leiste = document.createElement('div');
     leiste.className = 'werkzeuge';
@@ -230,7 +431,7 @@ async function ordnerZeigen(id, params) {
   // Das Suchfeld wird EINMAL gebaut und bei jedem Nachladen wiederverwendet.
   // Würde es mit der Liste neu entstehen, verlöre es bei jedem Tastendruck
   // den Fokus.
-  const suchfeld = listensuche(() => nachladen());
+  const suchfeld = listensuche(params, wegMerken, () => nachladen());
 
   async function nachladen() {
     const seite = Number(params.get('page') || 1);
@@ -288,35 +489,78 @@ async function ordnerZeigen(id, params) {
     if (location.hash !== ziel) history.replaceState(null, '', ziel);
   }
 
-  function listensuche(beiEingabe) {
-    const feld = document.createElement('input');
-    feld.type = 'search';
-    feld.className = 'listensuche';
-    feld.placeholder = t('ordner.listensuche');
-    feld.autocomplete = 'off';
-    feld.value = params.get('q') || '';
-    feld.setAttribute('aria-label', t('ordner.listensucheMarke'));
-    let zeitgeber = null;
-    feld.addEventListener('input', () => {
-      clearTimeout(zeitgeber);
-      zeitgeber = setTimeout(() => {
-        const wert = feld.value.trim();
-        if (wert) params.set('q', wert); else params.delete('q');
-        params.set('page', 1);
-        wegMerken();
-        beiEingabe();
-      }, 300);
-    });
-    feld.addEventListener('keydown', (ereignis) => {
-      if (ereignis.key === 'Escape' && feld.value) {
-        feld.value = '';
-        feld.dispatchEvent(new Event('input'));
-      }
-    });
-    return feld;
-  }
-
   await nachladen();
+}
+
+/**
+ * Das Suchfeld über einer Liste.
+ *
+ * Es wird EINMAL gebaut und bei jedem Nachladen wiederverwendet - entstünde
+ * es mit der Liste neu, verlöre es bei jedem Tastendruck den Fokus.
+ */
+function listensuche(params, wegMerken, beiEingabe) {
+  const feld = document.createElement('input');
+  feld.type = 'search';
+  feld.className = 'listensuche';
+  feld.placeholder = t('ordner.listensuche');
+  feld.autocomplete = 'off';
+  feld.value = params.get('q') || '';
+  feld.setAttribute('aria-label', t('ordner.listensucheMarke'));
+  let zeitgeber = null;
+  feld.addEventListener('input', () => {
+    clearTimeout(zeitgeber);
+    zeitgeber = setTimeout(() => {
+      const wert = feld.value.trim();
+      if (wert) params.set('q', wert); else params.delete('q');
+      params.set('page', 1);
+      wegMerken();
+      beiEingabe();
+    }, 300);
+  });
+  feld.addEventListener('keydown', (ereignis) => {
+    if (ereignis.key === 'Escape' && feld.value) {
+      feld.value = '';
+      feld.dispatchEvent(new Event('input'));
+    }
+  });
+  return feld;
+}
+
+/**
+ * Die Reiterleiste eines Ordners.
+ *
+ * Der erste Reiter ist der Ordner selbst - er zeigt, was ohne Reiter zu sehen
+ * wäre. Die übrigen sind seine Unterordner mit gesetztem Schalter; ein Klick
+ * führt auf deren eigene Ansicht, die denselben Kopf und dieselbe Leiste
+ * zeigt, nur mit anderem Inhalt.
+ */
+function reiterleiste(elternId, aktiveId, reiter) {
+  const leiste = document.createElement('div');
+  leiste.className = 'reiterleiste';
+  leiste.setAttribute('role', 'tablist');
+
+  const eintrag = (ziel, beschriftung) => {
+    const a = document.createElement('a');
+    a.className = 'reiter' + (String(ziel) === String(aktiveId) ? ' aktiv' : '');
+    a.href = '#/ordner/' + ziel;
+    a.setAttribute('role', 'tab');
+    a.setAttribute('aria-selected', String(ziel) === String(aktiveId) ? 'true' : 'false');
+    const name = document.createElement('span');
+    name.textContent = beschriftung;
+    // Die Zahl kommt nach: sie kostet je Reiter eine Abfrage an Paperless,
+    // und die Leiste soll deswegen nicht später erscheinen.
+    const zahl = document.createElement('span');
+    zahl.className = 'reiter-zahl';
+    a.append(name, zahl);
+    api.anzahl(ziel)
+      .then((ergebnis) => { zahl.textContent = zahlText(ergebnis.anzahl); })
+      .catch(() => { /* ohne Zahl bleibt der Reiter brauchbar */ });
+    return a;
+  };
+
+  leiste.append(eintrag(elternId, t('ordner.reiterAlle')));
+  for (const kind of reiter) leiste.append(eintrag(kind.id, kind.name));
+  return leiste;
 }
 
 // --- Tag-Schnellfilter -------------------------------------------------------
@@ -455,7 +699,7 @@ async function ordnerBearbeiten(id) {
   editorOeffnen({ knoten, geerbt, kinderZahl: nachfahrenZahl(id) });
 }
 
-async function ordnerAnlegen(elternId) {
+async function ordnerAnlegen(elternId, alsReiter = false) {
   let geerbt = [];
   if (elternId) {
     try {
@@ -463,7 +707,7 @@ async function ordnerAnlegen(elternId) {
       geerbt = ergebnis.fuer_kind || [];
     } catch (_) { /* dann ohne Anzeige */ }
   }
-  editorOeffnen({ knoten: null, elternId: elternId || null, geerbt });
+  editorOeffnen({ knoten: null, elternId: elternId || null, geerbt, alsReiter });
 }
 
 // --- Wegweiser ---------------------------------------------------------------
@@ -474,7 +718,9 @@ async function wegweiser() {
   if (!baum.geladen) await baumLaden();
 
   if (teile[0] === 'ordner' && teile[1]) {
-    baumZeichnen(teile[1]);
+    // Ein Reiter steht nicht im Baum: dort wird sein Behälter hervorgehoben.
+    const gezeigt = baum.nachId[teile[1]];
+    baumZeichnen(gezeigt && gezeigt.als_reiter ? gezeigt.eltern_id : teile[1]);
     await ordnerZeigen(Number(teile[1]), params);
     return;
   }
@@ -508,7 +754,7 @@ async function wegweiser() {
     return;
   }
   baumZeichnen(null);
-  await dashboard();
+  await dashboard(params);
 }
 
 // --- Sicherung des Baums (F8.1) ----------------------------------------------
@@ -549,8 +795,16 @@ async function neuLaden(aktiveId) {
   zaehlerVergessen();
   gruppenVergessen(null);
   await baumLaden();
-  if (aktiveId && baum.nachId[aktiveId]) gehe('#/ordner/' + aktiveId);
-  else { baumZeichnen(null); await wegweiser(); }
+  if (aktiveId && baum.nachId[aktiveId]) { gehe('#/ordner/' + aktiveId); return; }
+  // Zeigt die Adresse noch auf einen Ordner, den es nicht mehr gibt - etwa
+  // nach dem Löschen -, stünde dort sonst "Diesen Ordner gibt es nicht".
+  const { teile } = wegAuslesen();
+  if (teile[0] === 'ordner' && teile[1] && !baum.nachId[teile[1]]) {
+    gehe('#/dashboard');
+    return;
+  }
+  baumZeichnen(null);
+  await wegweiser();
 }
 
 // --- Start -------------------------------------------------------------------

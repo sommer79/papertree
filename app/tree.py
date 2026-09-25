@@ -57,6 +57,13 @@ class Knoten:
     spalten: list = field(default_factory=lambda: list(STANDARD_SPALTEN))
     seitengroesse: int = STANDARD_SEITENGROESSE
     auf_dashboard: bool = False
+    # Erscheint dieser Ordner als Reiter seines übergeordneten Ordners statt
+    # als Eintrag im Baum? Reine Darstellung - für Filter, Vererbung und
+    # Aggregation bleibt er ein Unterordner wie jeder andere.
+    als_reiter: bool = False
+    # Stellung auf der Startseite. Die Reihenfolge im Baum taugt dafür nicht:
+    # dort zählt die Stellung unter dem eigenen Elternordner.
+    dashboard_reihenfolge: int = 0
     # Dynamische Unterknoten (F4): Dimension, nach der sie aufgespannt werden.
     # Leer heisst: nur die von Hand angelegten Unterordner.
     gruppieren_nach: str = ""

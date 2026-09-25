@@ -126,6 +126,15 @@ a:hover { text-decoration: underline; }
 .knopf.nur-schmal { display: none; }
 @media (max-width: 900px) { .knopf.nur-schmal { display: inline-flex; } }
 
+/* Einstellungen: am Handy nur das Zahnrad, sonst die Beschriftung. Beides
+   nebeneinander sprengt den Kopf, und ein Zahnrad versteht auch so jeder. */
+#einstellungen-link .zahnrad { display: none; }
+@media (max-width: 900px) {
+  #einstellungen-link .zahnrad { display: block; }
+  #einstellungen-link span { display: none; }
+  #einstellungen-link { padding-left: 9px; padding-right: 9px; }
+}
+
 /* --- Rahmen -------------------------------------------------------------- */
 /* Nimmt die ganze Höhe unter dem Kopf ein. min-height: 0 erlaubt es den
    Kindern, kleiner als ihr Inhalt zu werden – sonst wächst ein Flex-Kind
@@ -251,8 +260,16 @@ a:hover { text-decoration: underline; }
 .menue-trenner { height: 1px; background: var(--rand); margin: 4px 0; }
 
 /* --- Inhaltsbereich ------------------------------------------------------ */
-.brotkrumen { font-size: 13px; color: var(--leise); margin-bottom: 4px; }
-.brotkrumen a { color: var(--leise); }
+/* Die Brotkrumen tragen die Orientierung: wo bin ich, und was liegt darüber.
+   Zu blass gesetzt übersieht man sie – darum etwas grösser, mit Ordnerzeichen
+   davor und dunkleren Verweisen. */
+.brotkrumen {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  font-size: 13.5px; color: var(--leise); margin-bottom: 6px;
+}
+.brotkrumen svg { color: var(--leise); flex: none; }
+.brotkrumen a { color: var(--text); font-weight: 500; text-decoration: none; }
+.brotkrumen a:hover { color: var(--akzent); text-decoration: underline; }
 
 .titelzeile {
   display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
@@ -284,6 +301,32 @@ a:hover { text-decoration: underline; }
 .titelzeile h1 { font-size: 20px; margin: 0; }
 .titelzeile .anzahl { color: var(--leise); font-size: 14px; }
 .werkzeuge { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+/* Die Knöpfe über der Liste: mit Zeichen davor und etwas kleiner als der
+   Fliesstext – sie begleiten den Titel, statt mit ihm zu wetteifern. */
+.knopf.werkzeugknopf { font-size: 13.5px; gap: 7px; }
+.knopf.werkzeugknopf svg { flex: none; opacity: .75; }
+
+/* Reiter innerhalb eines Ordners: Unterordner, die hier oben erscheinen
+   statt im Baum. Der erste Reiter ist der Ordner selbst. */
+.reiterleiste {
+  display: flex; align-items: stretch; gap: 2px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--rand); margin: 0 0 14px;
+}
+.reiter {
+  padding: 7px 12px 9px; font-size: 13.5px; color: var(--leise);
+  text-decoration: none; border-bottom: 2px solid transparent;
+  margin-bottom: -1px; white-space: nowrap;
+}
+.reiter { display: inline-flex; align-items: center; gap: 7px; }
+.reiter:hover { color: var(--text); }
+.reiter.aktiv { color: var(--text); font-weight: 600; border-bottom-color: var(--akzent); }
+/* Die Zahl im Reiter: leer, solange sie noch nicht da ist – ein Platzhalter
+   würde beim Nachtragen springen. */
+.reiter-zahl:not(:empty) {
+  padding: 1px 7px; border-radius: 999px; font-size: 11.5px; font-weight: 500;
+  color: var(--leise); background: var(--akzent-leicht);
+}
+.reiter.aktiv .reiter-zahl:not(:empty) { color: var(--akzent); }
 
 .karte {
   background: var(--flaeche); border: 1px solid var(--rand);
@@ -315,35 +358,35 @@ table.liste th {
      das Fenster. Mit einem Abstand stuende die erste Zeile darueber durch. */
   position: sticky; top: 0; background: var(--flaeche); z-index: 5;
 }
-.sortierknopf {
-  display: inline-flex; align-items: center; gap: 3px;
-  border: 0; background: none; font: inherit; color: inherit;
-  cursor: pointer; padding: 0; text-transform: inherit; letter-spacing: inherit;
+/* Sortiert wird über dieses Feld, nicht über die Spaltenköpfe: dort war es
+   am Handy nicht erreichbar, und nach manchen Spalten kann Paperless gar
+   nicht sortieren. Es steht neben der Suche, wo auch sonst gefiltert wird. */
+.sortierwahl { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.sortierwahl label { margin: 0; white-space: nowrap; }
+.sortierwahl select {
+  min-width: 0; max-width: 260px; padding: 7px 9px; font: inherit;
+  color: var(--text); background: var(--flaeche);
+  border: 1px solid var(--rand); border-radius: var(--rund);
 }
-.sortierknopf:hover { color: var(--akzent); }
-.sortierknopf.aktiv { color: var(--text); }
-/* Blass, solange nicht sortiert - beim Überfahren deutlich, damit man
-   überhaupt sieht, dass die Spalte sortierbar ist. */
-.sortierpfeil { opacity: 0; transition: opacity .12s; font-size: 10px; }
-.sortierknopf:hover .sortierpfeil { opacity: .55; }
-.sortierknopf.aktiv .sortierpfeil { opacity: 1; }
-th.nicht-sortierbar { cursor: default; }
-
-/* Auf breiten Schirmen sortiert man über die Spaltenköpfe – das Auswahlfeld
-   erscheint erst, wenn der Tabellenkopf ausgeblendet ist. */
-.sortierwahl { display: none; }
 @media (max-width: 720px) {
-  .sortierwahl {
-    display: flex; align-items: center; gap: 8px;
-    margin: 0 0 10px;
-  }
-  .sortierwahl label { margin: 0; white-space: nowrap; }
-  .sortierwahl select {
-    flex: 1; min-width: 0; padding: 7px 9px; font: inherit;
-    color: var(--text); background: var(--flaeche);
-    border: 1px solid var(--rand); border-radius: var(--rund);
-  }
+  /* Am Handy passen Suche, Sortierung, Spalten und Blättern nicht in eine
+     Zeile – nebeneinander gequetscht ist jedes Feld zu schmal, um noch
+     lesbar zu sein. Die Suche bekommt darum eine eigene Zeile, darunter
+     stehen Sortierung und Spalten nebeneinander. */
+  .listenleiste { flex-wrap: wrap; row-gap: 8px; }
+  .listenleiste .listensuche { flex: 1 1 100%; }
+  .sortierwahl { flex: 1 1 auto; min-width: 0; }
+  .sortierwahl label { display: none; }
+  .sortierwahl select { flex: 1; max-width: none; }
+  .listenleiste .spaltenwahl { flex: 0 0 auto; margin-left: auto; }
+  /* Das Blättern steht ohnehin unter der Liste – oben nimmt es hier nur
+     den Platz weg, den die Sortierung braucht. */
+  .listenleiste .blaettern.oben { display: none; }
 }
+
+/* Die Liste der zuletzt hinzugefügten Dokumente auf der Startseite. */
+.neueste { margin-top: 22px; }
+.neueste h2 { font-size: 15px; margin: 0 0 10px; }
 
 .filterleiste {
   display: flex; align-items: center; flex-wrap: wrap; gap: 8px;
@@ -364,7 +407,6 @@ th.nicht-sortierbar { cursor: default; }
    weisser Schrift wäre er auf hellem Grund unsichtbar. */
 .marke-chip.gewaehlt { box-shadow: 0 0 0 1.5px var(--flaeche), 0 0 0 3px var(--akzent); }
 table.liste tbody tr:hover { background: var(--akzent-leicht); }
-td.titel a { font-weight: 550; }
 /* In der Liste stehen die Tags in einer Zeile: gekürzt auf fünf Zeichen,
    der ganze Name im Tooltip. Kein Umbruch, damit die Zeilen gleich hoch
    bleiben. */
@@ -573,6 +615,19 @@ th.verweisspalte, td.verweisspalte { width: 1%; white-space: nowrap; padding-lef
 .dashkachel:hover { text-decoration: none; border-color: var(--akzent); }
 .dashkachel .zahl { font-size: 26px; font-weight: 650; }
 .dashkachel .wo { font-size: 12px; color: var(--leise); }
+/* Das Symbol des Ordners oben rechts – dasselbe, das im Baum vor dem Namen
+   steht. Es soll die Zahl nicht bedrängen, darum blass und aus der Flucht. */
+.dashkachel { position: relative; }
+.dashsymbol {
+  position: absolute; top: 12px; right: 12px;
+  display: inline-flex; color: var(--leise); opacity: .8;
+}
+/* Beim Ziehen: die Kachel selbst blass, das Ziel mit einer Kante markiert –
+   links oder rechts, je nachdem, wo sie landen würde. */
+.dashkachel.zieht { opacity: .45; }
+.dashkachel.ziel-davor { box-shadow: inset 3px 0 0 var(--akzent); }
+.dashkachel.ziel-danach { box-shadow: inset -3px 0 0 var(--akzent); }
+.dashkachel:active { cursor: grabbing; }
 
 /* --- Dialog -------------------------------------------------------------- */
 .dialog {
@@ -764,8 +819,27 @@ legend { font-size: 12px; text-transform: uppercase; letter-spacing: .4px; color
   /* Kein vertical-align mehr: der Chip zentriert selbst. */
 }
 
-/* Logo vor dem Namen des Korrespondenten in der Liste. */
-.mit-logo { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+/* Die erste Spalte: Zeichen, Titel, darunter der Korrespondent.
+   Beides gehört zusammen – in zwei Spalten war die Zeile breiter, ohne mehr
+   zu sagen. */
+.dok-zelle { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.dok-marke {
+  flex: 0 0 34px; width: 34px; height: 34px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--rand); border-radius: 7px;
+  background: var(--flaeche); color: var(--leise); overflow: hidden;
+}
+.dok-marke img { width: 100%; height: 100%; object-fit: contain; padding: 3px; }
+.dok-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+/* Beide Zeilen gleich hoch: der Titel trägt seine Bedeutung über das
+   Fettere, nicht über die Grösse – so bleibt die Zeile schmal. */
+.dok-titel {
+  font-size: 12.5px; font-weight: 600; color: var(--text); text-decoration: none;
+}
+.dok-titel:hover { color: var(--akzent); text-decoration: underline; }
+.dok-korrespondent { font-size: 12.5px; color: var(--leise); }
+
+/* Logo vor dem Namen des Korrespondenten, weiterhin in den Einstellungen. */
 .korrespondent-logo {
   width: 18px; height: 18px; flex: 0 0 18px;
   object-fit: contain; border-radius: 3px; background: var(--flaeche);
@@ -807,6 +881,11 @@ legend { font-size: 12px; text-transform: uppercase; letter-spacing: .4px; color
   font-size: 13.5px; cursor: pointer;
 }
 .spaltenzeile:hover { background: var(--akzent-leicht); }
+@media (max-width: 720px) {
+  /* Am Handy steht der Knopf rechts – linksbündig aufgeklappt liefe das
+     Menü aus dem Bild. */
+  .spaltenmenue { left: auto; right: 0; }
+}
 .spaltenzeile input:disabled { cursor: default; }
 .spaltenzeile:has(input:disabled) { color: var(--leise); cursor: default; }
 

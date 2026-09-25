@@ -27,6 +27,7 @@
 
   "dashboard.titel": "Dashboard",
   "dashboard.leer": "Noch keine Ordner auf dem Dashboard. Im Editor eines Ordners „Auf dem PaperTree-Dashboard anzeigen“ einschalten.",
+  "dashboard.neueste": "Neueste Dokumente",
 
   "baum.leer": "Noch keine Ordner. Mit „+ Ordner“ den ersten anlegen.",
   "baum.aufklappen": "Aufklappen",
@@ -48,6 +49,9 @@
   "ordner.unbekannt": "Diesen Ordner gibt es nicht.",
   "ordner.bearbeiten": "Ordner bearbeiten",
   "ordner.unterordnerNeu": "+ Unterordner",
+  "ordner.reiterNeu": "+ Reiter",
+  "ordner.reiterAlle": "Alle Dokumente",
+  "ordner.reiterBearbeiten": "Reiter bearbeiten",
   "ordner.alleDokumente": "alle Dokumente",
   "ordner.plusAlleUnter": "zusätzlich alle Unterordner",
   "ordner.plusDirekteUnter": "zusätzlich die direkten Unterordner",
@@ -72,6 +76,7 @@
   "suche.treffer.other": "{anzahl} Treffer",
 
   "liste.spalte.titel": "Titel",
+  "liste.spalte.titelKorrespondent": "Titel / Korrespondent",
   "liste.spalte.korrespondent": "Korrespondent",
   "liste.spalte.typ": "Typ",
   "liste.spalte.speicherpfad": "Speicherpfad",
@@ -89,10 +94,6 @@
   "liste.tagNurDiese": "{name} – nur diese anzeigen",
   "liste.tagFilterAus": "{name} – Filter entfernen",
   "liste.inPaperlessDok": "In Paperless öffnen: {titel}",
-  "liste.sortAufAktiv": "Aufsteigend sortiert – klicken für absteigend",
-  "liste.sortAbAktiv": "Absteigend sortiert – klicken für aufsteigend",
-  "liste.sortNach": "Nach {spalte} sortieren",
-  "liste.tagsNichtSortierbar": "Paperless kann nicht nach Tags sortieren",
   "liste.sortierung": "Sortierung",
   "liste.seiteVon": "Seite {seite} von {von}",
   "liste.vorherige": "Vorherige Seite",
@@ -182,6 +183,7 @@
   "editor.sortZusatzfeldAb": "Zusatzfeld: {name}, absteigend",
   "editor.seitengroesse": "Einträge pro Seite",
   "editor.aufDashboard": "Auf dem PaperTree-Dashboard anzeigen",
+  "editor.alsReiter": "Als Reiter im übergeordneten Ordner zeigen – dann steht dieser Ordner nicht mehr im Baum",
 
   "gruppierung.keine": "— keine, Unterordner von Hand —",
   "gruppierung.jahrErstellt": "Jahr (erstellt)",

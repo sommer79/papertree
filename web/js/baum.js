@@ -41,6 +41,21 @@ export function kinderVon(id) {
   return baum.kinder[id == null ? 'wurzel' : String(id)] || [];
 }
 
+/** Die Kinder, die im Baum erscheinen – ohne die, die Reiter sind.
+ *
+ *  Ein Reiter ist inhaltlich ein Unterordner: er zählt beim Löschen mit, er
+ *  kann verschoben werden, und "Unterordner einbeziehen" nimmt ihn auf.
+ *  Gezeigt wird er nur woanders, nämlich als Reiter seines Elternordners.
+ */
+export function ordnerKinder(id) {
+  return kinderVon(id).filter((k) => !k.als_reiter);
+}
+
+/** Die Kinder, die als Reiter des Ordners erscheinen. */
+export function reiterVon(id) {
+  return kinderVon(id).filter((k) => k.als_reiter);
+}
+
 export function nachfahrenZahl(id) {
   return kinderVon(id).reduce((summe, kind) => summe + 1 + nachfahrenZahl(kind.id), 0);
 }
@@ -166,11 +181,11 @@ function hintergrundVerdrahten(behaelter) {
 
 function ebene(elternId, aktiveId) {
   const huelle = document.createElement('div');
-  for (const knoten of kinderVon(elternId)) {
+  for (const knoten of ordnerKinder(elternId)) {
     huelle.append(zeile(knoten, aktiveId));
     if (!offen.has(knoten.id)) continue;
 
-    const hatManuelle = kinderVon(knoten.id).length > 0;
+    const hatManuelle = ordnerKinder(knoten.id).length > 0;
     const spannt = !!knoten.gruppieren_nach;
     if (!hatManuelle && !spannt) continue;
 
@@ -356,7 +371,7 @@ function ziehenVerdrahten(zeile, knoten, aktiveId) {
 
 function zeile(knoten, aktiveId) {
   // Ein aufspannender Ordner ist aufklappbar, auch ohne eigene Unterordner.
-  const hatKinder = kinderVon(knoten.id).length > 0 || !!knoten.gruppieren_nach;
+  const hatKinder = ordnerKinder(knoten.id).length > 0 || !!knoten.gruppieren_nach;
   const zeile = document.createElement('div');
   zeile.className = 'knoten-zeile' + (String(knoten.id) === String(aktiveId) ? ' aktiv' : '');
   zeile.dataset.knotenId = knoten.id;
@@ -488,7 +503,7 @@ function kontextmenue(knoten, anker, aktiveId) {
         : t('menue.loeschenFrage', { name: knoten.name });
       if (!confirm(frage)) return;
       await api.ordnerLoeschen(knoten.id);
-      if (beiAktualisieren) beiAktualisieren(null);
+      if (beiAktualisieren) beiAktualisieren(knoten.eltern_id || null);
     },
   });
 

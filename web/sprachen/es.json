@@ -27,6 +27,7 @@
 
   "dashboard.titel": "Panel",
   "dashboard.leer": "Todavía no hay carpetas en el panel. Active «Mostrar en el panel de PaperTree» en el editor de una carpeta.",
+  "dashboard.neueste": "Documentos más recientes",
 
   "baum.leer": "Todavía no hay carpetas. Cree la primera con «+ Carpeta».",
   "baum.aufklappen": "Desplegar",
@@ -48,6 +49,9 @@
   "ordner.unbekannt": "Esta carpeta no existe.",
   "ordner.bearbeiten": "Editar carpeta",
   "ordner.unterordnerNeu": "+ Subcarpeta",
+  "ordner.reiterNeu": "+ Pestaña",
+  "ordner.reiterAlle": "Todos los documentos",
+  "ordner.reiterBearbeiten": "Editar pestaña",
   "ordner.alleDokumente": "todos los documentos",
   "ordner.plusAlleUnter": "además todas las subcarpetas",
   "ordner.plusDirekteUnter": "además las subcarpetas directas",
@@ -72,6 +76,7 @@
   "suche.treffer.other": "{anzahl} resultados",
 
   "liste.spalte.titel": "Título",
+  "liste.spalte.titelKorrespondent": "Título / corresponsal",
   "liste.spalte.korrespondent": "Corresponsal",
   "liste.spalte.typ": "Tipo",
   "liste.spalte.speicherpfad": "Ruta de almacenamiento",
@@ -89,10 +94,6 @@
   "liste.tagNurDiese": "{name} – mostrar solo estos",
   "liste.tagFilterAus": "{name} – quitar el filtro",
   "liste.inPaperlessDok": "Abrir en Paperless: {titel}",
-  "liste.sortAufAktiv": "Orden ascendente – pulse para descendente",
-  "liste.sortAbAktiv": "Orden descendente – pulse para ascendente",
-  "liste.sortNach": "Ordenar por {spalte}",
-  "liste.tagsNichtSortierbar": "Paperless no puede ordenar por etiquetas",
   "liste.sortierung": "Orden",
   "liste.seiteVon": "Página {seite} de {von}",
   "liste.vorherige": "Página anterior",
@@ -182,6 +183,7 @@
   "editor.sortZusatzfeldAb": "Campo personalizado: {name}, descendente",
   "editor.seitengroesse": "Entradas por página",
   "editor.aufDashboard": "Mostrar en el panel de PaperTree",
+  "editor.alsReiter": "Mostrar como pestaña en la carpeta superior — esta carpeta ya no aparece en el árbol",
 
   "gruppierung.keine": "— ninguna, subcarpetas a mano —",
   "gruppierung.jahrErstellt": "Año (creación)",

@@ -27,6 +27,7 @@
 
   "dashboard.titel": "Dashboard",
   "dashboard.leer": "Nessuna cartella nella dashboard. Attiva «Mostra nella dashboard di PaperTree» nell'editor di una cartella.",
+  "dashboard.neueste": "Documenti più recenti",
 
   "baum.leer": "Ancora nessuna cartella. Crea la prima con «+ Cartella».",
   "baum.aufklappen": "Espandi",
@@ -48,6 +49,9 @@
   "ordner.unbekannt": "Questa cartella non esiste.",
   "ordner.bearbeiten": "Modifica cartella",
   "ordner.unterordnerNeu": "+ Sottocartella",
+  "ordner.reiterNeu": "+ Scheda",
+  "ordner.reiterAlle": "Tutti i documenti",
+  "ordner.reiterBearbeiten": "Modifica scheda",
   "ordner.alleDokumente": "tutti i documenti",
   "ordner.plusAlleUnter": "più tutte le sottocartelle",
   "ordner.plusDirekteUnter": "più le sottocartelle dirette",
@@ -72,6 +76,7 @@
   "suche.treffer.other": "{anzahl} risultati",
 
   "liste.spalte.titel": "Titolo",
+  "liste.spalte.titelKorrespondent": "Titolo / corrispondente",
   "liste.spalte.korrespondent": "Corrispondente",
   "liste.spalte.typ": "Tipo",
   "liste.spalte.speicherpfad": "Percorso di archiviazione",
@@ -89,10 +94,6 @@
   "liste.tagNurDiese": "{name} – mostra solo questi",
   "liste.tagFilterAus": "{name} – togli il filtro",
   "liste.inPaperlessDok": "Apri in Paperless: {titel}",
-  "liste.sortAufAktiv": "Ordine crescente – clicca per decrescente",
-  "liste.sortAbAktiv": "Ordine decrescente – clicca per crescente",
-  "liste.sortNach": "Ordina per {spalte}",
-  "liste.tagsNichtSortierbar": "Paperless non sa ordinare per etichetta",
   "liste.sortierung": "Ordinamento",
   "liste.seiteVon": "Pagina {seite} di {von}",
   "liste.vorherige": "Pagina precedente",
@@ -182,6 +183,7 @@
   "editor.sortZusatzfeldAb": "Campo personalizzato: {name}, decrescente",
   "editor.seitengroesse": "Voci per pagina",
   "editor.aufDashboard": "Mostra nella dashboard di PaperTree",
+  "editor.alsReiter": "Mostra come scheda nella cartella superiore — questa cartella non compare più nell'albero",
 
   "gruppierung.keine": "— nessuna, sottocartelle a mano —",
   "gruppierung.jahrErstellt": "Anno (creazione)",

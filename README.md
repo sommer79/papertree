@@ -4,7 +4,7 @@ A read-only navigation and reading layer on top of Paperless-ngx. Views live
 as a tree inside PaperTree; Paperless stays the source of truth for the
 documents themselves.
 
-Status: **stages 1 and 2 implemented** (version 0.3.0). The requirements live
+Status: **stages 1 and 2 implemented** (version 0.4.0). The requirements live
 in the document "PaperTree – Anforderungen"; the markers A1–A7, F1–F9 and
 N1–N6 in the source files refer to it.
 
@@ -28,6 +28,9 @@ Names, correspondents and documents in the pictures are invented.*
   that actually occur — by year, correspondent, document type, tag, storage
   path or a custom field. When a new value shows up, the subfolder appears by
   itself. Hand-made subfolders continue to exist alongside them
+- **Tabs inside a folder**: a subfolder can appear as a tab of its parent
+  instead of a line in the tree — same filters, same inheritance, just
+  shown where you are working. Each tab carries its document count
 - **Export and import of the tree** as JSON
 - Filter inheritance along the tree, switchable per folder; the effective
   filter is visible in the editor
@@ -38,14 +41,19 @@ Names, correspondents and documents in the pictures are invented.*
   fields with the operators of their data type. Live match count included
 - Adopting a filter from a copied Paperless link
 - Document list with selectable columns, sorting and paging; tile view.
-  A click on a tag narrows the list to it — the filter lives in the URL,
-  so it can be shared and leaves the stored folder alone
+  Title and correspondent share one column, with the correspondent's logo
+  in front of them; sorting happens in a field above the list and offers
+  what the visible columns allow. A click on a tag narrows the list to it —
+  the filter lives in the URL, so it can be shared and leaves the stored
+  folder alone
 - **An icon per folder**, chosen from some two thousand, searchable by
   topic in the language of the interface
 - Detail view with a built-in PDF viewer, download and an "open in Paperless"
   button
 - Full-text search, globally and within a folder
-- A dashboard with the folders you want on it
+- A start page with the folders you want on it — drag the cards into the
+  order you like — and, below them, the newest documents across everything:
+  searchable, sortable, with selectable columns
 - **Settings for administrators**: an icon per tag, which replaces the
   shortened name in the lists, and a logo per correspondent, shown small
   in front of the name and large in the corner of the document view. Both
@@ -85,6 +93,12 @@ own: it speaks the language chosen in Paperless, and writes dates with the
 date locale set there. Two settings for the same thing drift apart, and
 nobody looks for them in two places. A language PaperTree does not have
 gets English.
+
+**A tab is a folder.** A subfolder marked as a tab disappears from the tree
+and shows up as a tab of its parent instead. Nothing else changes: it keeps
+its filter, inherits like any other subfolder, and counts towards "include
+subfolders". Only where it is shown is different — which is why it is a flag
+on the node and not a second kind of thing.
 
 **Appearance is shared, the tree is not.** Tag icons and correspondent
 logos look the same for everyone and are maintained by an administrator;

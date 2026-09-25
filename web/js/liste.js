@@ -9,8 +9,11 @@ import { datum, t, zahlText } from './sprache.js';
 // In den Tabellen steht nicht die Beschriftung, sondern ihr Schlüssel: die
 // Spaltenliste entsteht beim Laden des Moduls, die Sprache erst danach.
 export const SPALTEN = {
-  title: { beschriftung: 'liste.spalte.titel', zeichne: (dok) => verweis(dok) },
-  correspondent: { beschriftung: 'liste.spalte.korrespondent', zeichne: (dok) => korrespondentZelle(dok) },
+  title: { beschriftung: 'liste.spalte.titel', zeichne: (dok, kontext) => dokumentZelle(dok, kontext) },
+  // Der Korrespondent hat keine eigene Spalte mehr: er steht unter dem Titel.
+  // In der Spaltenwahl bleibt er, denn dort entscheidet sich, ob er überhaupt
+  // erscheint - deshalb nur ein Schalter, keine Spalte.
+  correspondent: { beschriftung: 'liste.spalte.korrespondent', nurSchalter: true },
   document_type: { beschriftung: 'liste.spalte.typ', zeichne: (dok) => text(namen('document_types', dok.document_type)) },
   storage_path: { beschriftung: 'liste.spalte.speicherpfad', zeichne: (dok) => text(namen('storage_paths', dok.storage_path)) },
   tags: { beschriftung: 'liste.spalte.tags', zeichne: (dok, kontext) => marken(dok.tags, kontext) },
@@ -20,36 +23,27 @@ export const SPALTEN = {
   archive_serial_number: { beschriftung: 'liste.spalte.archivnr', klasse: 'datum', zeichne: (dok) => text(dok.archive_serial_number) },
 };
 
-const SORTIERBAR = {
-  title: 'title',
-  correspondent: 'correspondent__name',
-  document_type: 'document_type__name',
-  storage_path: 'storage_path__name',
-  created: 'created',
-  added: 'added',
-  page_count: 'page_count',
-  archive_serial_number: 'archive_serial_number',
-};
 
-// Eine Liste für beide Stellen, die sortieren lassen: das Dropdown über der
-// Liste (am Handy der einzige Weg, weil der Tabellenkopf dort fehlt) und der
-// Ordner-Editor.
+// Eine Liste für beide Stellen, die sortieren lassen: das Auswahlfeld über
+// der Liste und der Ordner-Editor. Der dritte Eintrag nennt die Spalte, zu
+// der die Sortierung gehört - in der Liste erscheint nur, wonach man dort
+// auch etwas sieht. Null heisst: an keine Spalte gebunden, nur im Editor.
 export const SORTIERUNGEN = [
-  ['-created', 'sortierung.erstelltNeu'],
-  ['created', 'sortierung.erstelltAlt'],
-  ['-added', 'sortierung.hinzugefuegtNeu'],
-  ['added', 'sortierung.hinzugefuegtAlt'],
-  ['title', 'sortierung.titelAuf'],
-  ['-title', 'sortierung.titelAb'],
-  ['correspondent__name', 'sortierung.korrespondentAuf'],
-  ['-correspondent__name', 'sortierung.korrespondentAb'],
-  ['document_type__name', 'sortierung.typAuf'],
-  ['storage_path__name', 'sortierung.speicherpfadAuf'],
-  ['-modified', 'sortierung.geaendertNeu'],
-  ['-page_count', 'sortierung.seitenAb'],
-  ['page_count', 'sortierung.seitenAuf'],
-  ['archive_serial_number', 'sortierung.archivnummer'],
-  ['id', 'sortierung.kennung'],
+  ['-created', 'sortierung.erstelltNeu', 'created'],
+  ['created', 'sortierung.erstelltAlt', 'created'],
+  ['-added', 'sortierung.hinzugefuegtNeu', 'added'],
+  ['added', 'sortierung.hinzugefuegtAlt', 'added'],
+  ['title', 'sortierung.titelAuf', 'title'],
+  ['-title', 'sortierung.titelAb', 'title'],
+  ['correspondent__name', 'sortierung.korrespondentAuf', 'correspondent'],
+  ['-correspondent__name', 'sortierung.korrespondentAb', 'correspondent'],
+  ['document_type__name', 'sortierung.typAuf', 'document_type'],
+  ['storage_path__name', 'sortierung.speicherpfadAuf', 'storage_path'],
+  ['-modified', 'sortierung.geaendertNeu', null],
+  ['-page_count', 'sortierung.seitenAb', 'page_count'],
+  ['page_count', 'sortierung.seitenAuf', 'page_count'],
+  ['archive_serial_number', 'sortierung.archivnummer', 'archive_serial_number'],
+  ['id', 'sortierung.kennung', null],
 ];
 
 function namen(art, id) {
@@ -62,13 +56,6 @@ function text(wert) {
   const knoten = document.createElement('span');
   knoten.textContent = wert == null ? '' : String(wert);
   return knoten;
-}
-
-function verweis(dok) {
-  const a = document.createElement('a');
-  a.href = '#/dok/' + dok.id;
-  a.textContent = dok.title || t('liste.ohneTitel');
-  return a;
 }
 
 // Wie viele Zeichen ein Tag in der Liste zeigt. Mehr sprengt die Zeile,
@@ -87,24 +74,74 @@ function hellIst(farbe) {
   return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.6;
 }
 
-/** Korrespondent mit seinem Logo davor, sofern eines hinterlegt ist. */
-function korrespondentZelle(dok) {
-  const name = namen('correspondents', dok.correspondent);
-  if (!dok.correspondent) return text(name);
-  const url = korrespondentLogo(dok.correspondent);
-  if (!url) return text(name);
-  const huelle = document.createElement('span');
-  huelle.className = 'mit-logo';
-  const bild = document.createElement('img');
-  bild.className = 'korrespondent-logo';
-  bild.src = url;
-  bild.alt = '';
-  bild.loading = 'lazy';
-  // Fehlt die Datei doch einmal, soll kein kaputtes Bild stehen bleiben.
-  bild.addEventListener('error', () => bild.remove());
-  const beschriftung = document.createElement('span');
-  beschriftung.textContent = name;
-  huelle.append(bild, beschriftung);
+/** Das Blatt, das für ein Dokument ohne Korrespondentenlogo einsteht. */
+function blattSymbol() {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', '0 0 24 24');
+  svg.setAttribute('width', '18');
+  svg.setAttribute('height', '18');
+  svg.setAttribute('fill', 'none');
+  svg.setAttribute('stroke', 'currentColor');
+  svg.setAttribute('stroke-width', '1.6');
+  svg.setAttribute('stroke-linecap', 'round');
+  svg.setAttribute('stroke-linejoin', 'round');
+  svg.setAttribute('aria-hidden', 'true');
+  for (const d of ['M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z',
+                   'M14 3v5h5', 'M9 13h6', 'M9 17h4']) {
+    const pfad = document.createElementNS(ns, 'path');
+    pfad.setAttribute('d', d);
+    svg.append(pfad);
+  }
+  return svg;
+}
+
+/**
+ * Die erste Spalte: das Zeichen des Korrespondenten, daneben der Titel und
+ * darunter der Korrespondent.
+ *
+ * Titel und Korrespondent gehören zusammen - getrennt in zwei Spalten war die
+ * Zeile breiter, ohne mehr zu sagen. Ist der Korrespondent in der Spaltenwahl
+ * abgeschaltet, bleibt nur der Titel stehen.
+ */
+function dokumentZelle(dok, kontext) {
+  const huelle = document.createElement('div');
+  huelle.className = 'dok-zelle';
+
+  const marke = document.createElement('span');
+  marke.className = 'dok-marke';
+  const url = dok.correspondent ? korrespondentLogo(dok.correspondent) : '';
+  if (url) {
+    const bild = document.createElement('img');
+    bild.src = url;
+    bild.alt = '';
+    bild.loading = 'lazy';
+    // Fehlt die Datei doch einmal, tritt das Blatt an ihre Stelle.
+    bild.addEventListener('error', () => {
+      bild.remove();
+      marke.append(blattSymbol());
+    });
+    marke.append(bild);
+  } else {
+    marke.append(blattSymbol());
+  }
+
+  const spalte = document.createElement('span');
+  spalte.className = 'dok-text';
+  const a = document.createElement('a');
+  a.className = 'dok-titel';
+  a.href = '#/dok/' + dok.id;
+  a.textContent = dok.title || t('liste.ohneTitel');
+  spalte.append(a);
+
+  if (kontext && kontext.mitKorrespondent && dok.correspondent) {
+    const wer = document.createElement('span');
+    wer.className = 'dok-korrespondent';
+    wer.textContent = namen('correspondents', dok.correspondent);
+    spalte.append(wer);
+  }
+
+  huelle.append(marke, spalte);
   return huelle;
 }
 
@@ -307,7 +344,11 @@ function spaltenSymbol() {
 export function listeZeichnen(ergebnis, spalten, optionen = {}) {
   const { beiSortierung, beiSeite, darstellung, beiTagKlick, gewaehlteTags,
           suchfeld, paperlessBasis, beiSpalten } = optionen;
-  const kontext = { beiTagKlick, gewaehlteTags, paperlessBasis };
+  // Der Korrespondent ist keine eigene Spalte mehr, sondern ein Schalter für
+  // die zweite Zeile unter dem Titel.
+  const mitKorrespondent = spalten.includes('correspondent');
+  const tabellenspalten = spalten.filter((s) => SPALTEN[s] && !SPALTEN[s].nurSchalter);
+  const kontext = { beiTagKlick, gewaehlteTags, paperlessBasis, mitKorrespondent };
   const huelle = document.createElement('div');
 
   // Kopfleiste über der Liste: Suchfeld links, Blättern rechts. Sie steht
@@ -316,6 +357,10 @@ export function listeZeichnen(ergebnis, spalten, optionen = {}) {
   const kopfleiste = document.createElement('div');
   kopfleiste.className = 'listenleiste';
   if (suchfeld) kopfleiste.append(suchfeld);
+  // Sortiert wird hier, nicht mehr über die Spaltenköpfe: dort war es am
+  // Handy gar nicht erreichbar, und eine Spalte wie die Tags kann Paperless
+  // ohnehin nicht sortieren.
+  if (beiSortierung) kopfleiste.append(sortierwahl(ergebnis, beiSortierung, spalten));
   if (beiSpalten) kopfleiste.append(spaltenknopf(spalten, beiSpalten));
   if (ergebnis.pages > 1 && beiSeite) kopfleiste.append(blaettern(ergebnis, beiSeite, true));
   if (kopfleiste.children.length) huelle.append(kopfleiste);
@@ -328,11 +373,6 @@ export function listeZeichnen(ergebnis, spalten, optionen = {}) {
     huelle.append(leer);
     return huelle;
   }
-
-  // Sortierung als Auswahlfeld: am Handy der einzige Weg, weil der
-  // Tabellenkopf dort ausgeblendet ist. Auf breiten Schirmen versteckt es das
-  // Stylesheet, dort sortiert man über die Spaltenköpfe.
-  if (beiSortierung) huelle.append(sortierwahl(ergebnis, beiSortierung));
 
   if (darstellung === 'kacheln') {
     const gitter = document.createElement('div');
@@ -360,42 +400,14 @@ export function listeZeichnen(ergebnis, spalten, optionen = {}) {
 
     const kopf = document.createElement('thead');
     const kopfzeile = document.createElement('tr');
-    for (const schluessel of spalten) {
+    for (const schluessel of tabellenspalten) {
       const definition = SPALTEN[schluessel];
-      if (!definition) continue;
       const zelle = document.createElement('th');
       if (definition.klasse) zelle.className = definition.klasse;
-      const feld = SORTIERBAR[schluessel];
-      if (feld && beiSortierung) {
-        const aktiv = (ergebnis.ordering || '').replace('-', '') === feld;
-        const absteigend = (ergebnis.ordering || '').startsWith('-');
-        const knopf = document.createElement('button');
-        knopf.type = 'button';
-        knopf.className = 'sortierknopf' + (aktiv ? ' aktiv' : '');
-        const beschriftung = document.createElement('span');
-        beschriftung.textContent = t(definition.beschriftung);
-        const zeiger = document.createElement('span');
-        zeiger.className = 'sortierpfeil';
-        // Aktive Spalte: wohin es gerade sortiert. Sonst blass, was ein Klick
-        // täte - erst damit ist überhaupt zu sehen, dass man klicken kann.
-        zeiger.textContent = aktiv ? (absteigend ? '↓' : '↑') : '↕';
-        knopf.append(beschriftung, zeiger);
-        knopf.dataset.tooltip = aktiv
-          ? t(absteigend ? 'liste.sortAbAktiv' : 'liste.sortAufAktiv')
-          : t('liste.sortNach', { spalte: t(definition.beschriftung) });
-        knopf.addEventListener('click', () => {
-          beiSortierung(aktiv && !absteigend ? '-' + feld : feld);
-        });
-        zelle.append(knopf);
-      } else {
-        zelle.textContent = t(definition.beschriftung);
-        if (schluessel === 'tags') {
-          // Paperless kann nicht nach Tags sortieren (ordering_fields kennt
-          // das Feld nicht). Lieber sagen als einen Knopf anbieten, der nichts tut.
-          zelle.dataset.tooltip = t('liste.tagsNichtSortierbar');
-          zelle.classList.add('nicht-sortierbar');
-        }
-      }
+      // Die erste Spalte trägt beides, sofern der Korrespondent eingeschaltet ist.
+      zelle.textContent = (schluessel === 'title' && mitKorrespondent)
+        ? t('liste.spalte.titelKorrespondent')
+        : t(definition.beschriftung);
       kopfzeile.append(zelle);
     }
     // Die Verweisspalte hängt fest am rechten Rand und steht nicht zur
@@ -415,9 +427,8 @@ export function listeZeichnen(ergebnis, spalten, optionen = {}) {
     const koerper = document.createElement('tbody');
     for (const dok of ergebnis.results) {
       const zeile = document.createElement('tr');
-      for (const schluessel of spalten) {
+      for (const schluessel of tabellenspalten) {
         const definition = SPALTEN[schluessel];
-        if (!definition) continue;
         const zelle = document.createElement('td');
         zelle.className = [schluessel === 'title' ? 'titel' : '', definition.klasse || '']
           .filter(Boolean).join(' ');
@@ -443,7 +454,7 @@ export function listeZeichnen(ergebnis, spalten, optionen = {}) {
   return huelle;
 }
 
-function sortierwahl(ergebnis, beiSortierung) {
+function sortierwahl(ergebnis, beiSortierung, spalten) {
   const leiste = document.createElement('div');
   leiste.className = 'sortierwahl';
 
@@ -455,7 +466,11 @@ function sortierwahl(ergebnis, beiSortierung) {
   const feld = document.createElement('select');
   feld.id = 'sortierwahl-feld';
   const aktuell = ergebnis.ordering || '';
-  for (const [wert, schluessel] of SORTIERUNGEN) {
+  // Angeboten wird, was zu einer sichtbaren Spalte gehört: wonach man nichts
+  // sieht, will man auch nicht sortieren.
+  const moeglich = SORTIERUNGEN.filter(
+    ([wert, , spalte]) => wert === aktuell || (spalte && spalten.includes(spalte)));
+  for (const [wert, schluessel] of moeglich) {
     const option = document.createElement('option');
     option.value = wert;
     option.textContent = t(schluessel);
@@ -463,7 +478,7 @@ function sortierwahl(ergebnis, beiSortierung) {
   }
   // Eine Sortierung, die nicht in der Liste steht (etwa nach einem
   // Zusatzfeld), wird als eigener Eintrag ergänzt, damit sie sichtbar bleibt.
-  if (aktuell && !SORTIERUNGEN.some(([w]) => w === aktuell)) {
+  if (aktuell && !moeglich.some(([w]) => w === aktuell)) {
     const option = document.createElement('option');
     option.value = aktuell;
     option.textContent = aktuell;

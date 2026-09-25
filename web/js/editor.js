@@ -46,9 +46,13 @@ export function editorVorbereiten(beiAenderung) {
       ? tn('menue.loeschenMitKindern', wieViele, { name: zustand.knoten.name })
       : t('menue.loeschenFrage', { name: zustand.knoten.name });
     if (!confirm(frage)) return;
+    const zurueck = zustand.knoten.eltern_id || null;
     await api.ordnerLoeschen(zustand.knoten.id);
     dialog.close();
-    beiAenderung && beiAenderung(null);
+    // Zum übergeordneten Ordner: die Ansicht, die gerade offen war, gibt es
+    // nicht mehr. Bei einem Reiter ist das immer der Fall - er wird aus
+    // seiner eigenen Ansicht heraus gelöscht.
+    beiAenderung && beiAenderung(zurueck);
   });
 
   for (const id of ['e-eigener', 'e-kinder', 'e-tief']) {
@@ -115,13 +119,15 @@ export function editorVorbereiten(beiAenderung) {
   });
 }
 
-export async function editorOeffnen({ knoten, elternId, geerbt, kinderZahl }) {
+export async function editorOeffnen({ knoten, elternId, geerbt, kinderZahl, alsReiter }) {
   zustand = {
     knoten: knoten ? { ...knoten } : {
       id: null, name: '', eltern_id: elternId || null,
       eigener_filter: false, filter: {}, kinder_einbeziehen: false,
       kinder_tief: true, eigenstaendig: false, sortierung: '-created',
       darstellung: 'liste', spalten: [], seitengroesse: 50, auf_dashboard: false,
+      // Über "+ Reiter" angelegt: der Schalter steht dann schon richtig.
+      als_reiter: !!alsReiter,
     },
     geerbt: geerbt || [],
     kinderZahl: kinderZahl || 0,
@@ -145,6 +151,7 @@ export async function editorOeffnen({ knoten, elternId, geerbt, kinderZahl }) {
   d('e-eigenstaendig').checked = !!zustand.knoten.eigenstaendig;
   d('e-seitengroesse').value = zustand.knoten.seitengroesse || 50;
   d('e-dashboard').checked = !!zustand.knoten.auf_dashboard;
+  d('e-reiter').checked = !!zustand.knoten.als_reiter;
   d('e-loeschen').style.display = zustand.knoten.id ? '' : 'none';
   d('e-link').value = '';
   d('e-link-meldung').textContent = '';
@@ -522,6 +529,7 @@ async function speichern() {
     symbol: zustand.knoten.symbol || '',
     seitengroesse: Number(d('e-seitengroesse').value) || 50,
     auf_dashboard: d('e-dashboard').checked,
+    als_reiter: d('e-reiter').checked,
     filter: d('e-eigener').checked ? nachFilter(zustand.kriterien, zustand.roh) : {},
   };
 

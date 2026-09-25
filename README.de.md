@@ -4,7 +4,7 @@ Eine nur lesende Navigations- und Leseoberfläche über Paperless-ngx. Ansichten
 liegen als Baum in PaperTree selbst; Paperless bleibt die Quelle der Wahrheit
 für die Dokumente.
 
-Stand: **Stufe 1 und 2 umgesetzt** (Version 0.3.0). Die Anforderungen stehen im
+Stand: **Stufe 1 und 2 umgesetzt** (Version 0.4.0). Die Anforderungen stehen im
 Dokument „PaperTree – Anforderungen"; die Kürzel A1–A7, F1–F9 und N1–N6 in den
 Quelldateien verweisen darauf.
 
@@ -29,6 +29,10 @@ Namen, Korrespondenten und Dokumente auf den Bildern sind erfunden.*
   Speicherpfad oder einem Zusatzfeld. Kommt ein Wert dazu, erscheint der
   Unterordner von selbst. Von Hand angelegte Unterordner bleiben daneben
   bestehen
+- **Reiter innerhalb eines Ordners**: ein Unterordner kann als Reiter seines
+  übergeordneten Ordners erscheinen statt als Zeile im Baum – mit denselben
+  Filtern und derselben Vererbung, nur dort gezeigt, wo man arbeitet. Jeder
+  Reiter trägt seine Dokumentzahl
 - **Export und Import des Baums** als JSON
 - Filtervererbung entlang des Baums, je Ordner abschaltbar; der effektive
   Filter ist im Editor sichtbar
@@ -39,15 +43,20 @@ Namen, Korrespondenten und Dokumente auf den Bildern sind erfunden.*
   Zusatzfelder mit den Operatoren ihres Datentyps. Live-Trefferzahl inklusive
 - Übernahme eines Filters aus einem kopierten Paperless-Link
 - Dokumentliste mit wählbaren Spalten, Sortierung und Blättern;
-  Kachelansicht. Ein Klick auf einen Tag verengt die Liste darauf – der
-  Filter steht in der Adresse, lässt sich also weitergeben und verändert
-  den gespeicherten Ordner nicht
+  Kachelansicht. Titel und Korrespondent teilen sich eine Spalte, mit dem
+  Logo des Korrespondenten davor; sortiert wird über ein Feld über der
+  Liste, das anbietet, was die sichtbaren Spalten hergeben. Ein Klick auf
+  einen Tag verengt die Liste darauf – der Filter steht in der Adresse,
+  lässt sich also weitergeben und verändert den gespeicherten Ordner nicht
 - **Ein Symbol je Ordner**, aus gut zweitausend, nach Themen durchsuchbar
   in der Sprache der Oberfläche
 - Detailansicht mit eingebautem PDF-Betrachter, Download und dem Knopf
   „In Paperless öffnen"
 - Volltextsuche global und innerhalb eines Ordners
-- Dashboard mit den Ordnern, die man dort haben will
+- Startseite mit den Ordnern, die man dort haben will – die Kacheln lassen
+  sich in die gewünschte Reihenfolge ziehen – und darunter die neuesten
+  Dokumente über den ganzen Bestand: durchsuchbar, sortierbar, mit
+  wählbaren Spalten
 - **Einstellungen für Administratoren**: je Tag ein Symbol, das in den
   Listen an die Stelle der Kurzform tritt, und je Korrespondent ein Logo,
   klein vor dem Namen und gross in der Ecke der Dokumentansicht. Beides
@@ -89,6 +98,13 @@ Spracheinstellung: es spricht die Sprache, die in Paperless gewählt ist, und
 schreibt das Datum mit der dort eingestellten Datumssprache. Zwei
 Einstellungen für dieselbe Sache laufen auseinander, und niemand sucht sie an
 zwei Orten. Eine Sprache, die PaperTree nicht hat, bekommt Englisch.
+
+**Ein Reiter ist ein Ordner.** Ein Unterordner mit gesetztem Schalter
+verschwindet aus dem Baum und erscheint stattdessen als Reiter seines
+übergeordneten Ordners. Sonst ändert sich nichts: er behält seinen Filter,
+erbt wie jeder andere Unterordner und zählt bei „Unterordner einbeziehen" mit.
+Anders ist nur, wo er gezeigt wird – darum ist es ein Schalter am Knoten und
+keine zweite Art von Sache.
 
 **Das Aussehen gilt für alle, der Baum nicht.** Tag-Symbole und
 Korrespondenten-Logos sehen für jeden gleich aus und werden von einem

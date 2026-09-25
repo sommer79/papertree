@@ -24,7 +24,7 @@ from .tree import (
     Knoten,
 )
 
-SCHEMA_STAND = 4
+SCHEMA_STAND = 6
 
 # Erweiterungen am Schema, der Reihenfolge nach. Stand 1 ist die Tabelle unten.
 _WANDLUNGEN = {
@@ -36,6 +36,19 @@ _WANDLUNGEN = {
     3: [
         # Symbol je Ordner (F1.7). Leer heisst: das Standardsymbol.
         "ALTER TABLE ordner ADD COLUMN symbol TEXT NOT NULL DEFAULT ''",
+    ],
+    6: [
+        # Die Reihenfolge der Kacheln auf der Startseite. Die des Baums taugt
+        # dafür nicht: dort zählt die Stellung unter dem eigenen Elternordner,
+        # auf der Startseite stehen Ordner aus verschiedenen Ebenen nebeneinander.
+        "ALTER TABLE ordner ADD COLUMN dashboard_reihenfolge INTEGER NOT NULL DEFAULT 0",
+    ],
+    5: [
+        # Ein Ordner kann als Reiter seines übergeordneten Ordners erscheinen
+        # statt als Eintrag im Baum. Inhaltlich bleibt er ein Ordner - mit
+        # Filter, Vererbung und allem, was dazugehört; nur gezeigt wird er
+        # woanders.
+        "ALTER TABLE ordner ADD COLUMN als_reiter INTEGER NOT NULL DEFAULT 0",
     ],
     4: [
         # Darstellung von Tags und Korrespondenten (F7). Anders als der Baum
@@ -74,6 +87,8 @@ CREATE TABLE IF NOT EXISTS ordner (
     auf_dashboard      INTEGER NOT NULL DEFAULT 0,
     gruppieren_nach    TEXT    NOT NULL DEFAULT '',
     symbol             TEXT    NOT NULL DEFAULT '',
+    als_reiter         INTEGER NOT NULL DEFAULT 0,
+    dashboard_reihenfolge INTEGER NOT NULL DEFAULT 0,
     erstellt           TEXT    NOT NULL,
     geaendert          TEXT    NOT NULL
 );
@@ -109,6 +124,8 @@ _SCHREIBBAR = {
     "auf_dashboard": lambda w: 1 if w else 0,
     "gruppieren_nach": lambda w: str(w or "")[:40],
     "symbol": lambda w: _symbolname(w),
+    "als_reiter": lambda w: 1 if w else 0,
+    "dashboard_reihenfolge": lambda w: int(w or 0),
 }
 
 
@@ -195,6 +212,8 @@ def _als_knoten(zeile: sqlite3.Row) -> Knoten:
         spalten=spalten,
         seitengroesse=zeile["seitengroesse"],
         auf_dashboard=bool(zeile["auf_dashboard"]),
+        als_reiter=bool(zeile["als_reiter"]),
+        dashboard_reihenfolge=int(zeile["dashboard_reihenfolge"]),
         gruppieren_nach=(
             zeile["gruppieren_nach"] if "gruppieren_nach" in zeile.keys() else ""
         ) or "",
@@ -321,6 +340,22 @@ def reihenfolge_setzen(benutzer: int, eltern_id, ids: list) -> None:
                 "UPDATE ordner SET reihenfolge = ?, eltern_id = ?, geaendert = ? "
                 "WHERE id = ? AND benutzer = ?",
                 (stelle, eltern_id, _jetzt(), int(knoten_id), benutzer),
+            )
+
+
+def dashboard_reihenfolge_setzen(benutzer: int, ids: list) -> None:
+    """Die Reihenfolge der Kacheln auf der Startseite.
+
+    Getrennt von der Reihenfolge im Baum: dort zählt die Stellung unter dem
+    eigenen Elternordner, hier stehen Ordner aus verschiedenen Ebenen
+    nebeneinander.
+    """
+    with verbinde() as v:
+        for stelle, knoten_id in enumerate(ids, start=1):
+            v.execute(
+                "UPDATE ordner SET dashboard_reihenfolge = ?, geaendert = ? "
+                "WHERE id = ? AND benutzer = ?",
+                (stelle, _jetzt(), int(knoten_id), benutzer),
             )
 
 

@@ -150,6 +150,8 @@ def _knoten_als_dict(k) -> dict:
         "auf_dashboard": k.auf_dashboard,
         "gruppieren_nach": k.gruppieren_nach,
         "symbol": k.symbol,
+        "als_reiter": k.als_reiter,
+        "dashboard_reihenfolge": k.dashboard_reihenfolge,
     }
 
 
@@ -208,11 +210,20 @@ async def baum_reihenfolge(anfrage: Request, daten: dict = Body(...)):
     return {"gesetzt": True}
 
 
+@app.post("/api/dashboard/reihenfolge")
+async def dashboard_reihenfolge(anfrage: Request, daten: dict = Body(...)):
+    """Die Reihenfolge der Kacheln auf der Startseite."""
+    person = await _benutzer(anfrage)
+    db.dashboard_reihenfolge_setzen(person["id"], daten.get("ids") or [])
+    return {"gesetzt": True}
+
+
 # --- Sicherung des Baums (F8.1) ----------------------------------------------
 _EXPORT_FELDER = (
     "name", "eigener_filter", "filter", "kinder_einbeziehen", "kinder_tief",
     "eigenstaendig", "sortierung", "darstellung", "spalten", "seitengroesse",
-    "auf_dashboard", "gruppieren_nach", "symbol",
+    "auf_dashboard", "gruppieren_nach", "symbol", "als_reiter",
+    "dashboard_reihenfolge",
 )
 
 
@@ -459,6 +470,61 @@ async def suche(
         "results": daten.get("results") or [],
         "page": page,
         "pages": max(1, -(-anzahl // page_size)) if anzahl else 0,
+        "tag": gewaehlte_tags,
+    }
+
+
+# Wie weit die Startseite zurückreicht. Mehr ist kein Überblick mehr.
+NEUESTE_HOECHSTENS = 150
+
+
+@app.get("/api/neueste")
+async def neueste(
+    anfrage: Request,
+    page: int = 1,
+    page_size: int = 50,
+    ordering: str = "-created",
+    q: str = "",
+    tag: str | None = None,
+):
+    """Der ganze Bestand für die Startseite, neueste zuerst.
+
+    Wie ein Ordner ohne Filter: blättern, sortieren, suchen und Tags
+    anklicken funktionieren hier genauso. Sortiert wird nach dem Datum des
+    Dokuments, nicht nach dem der Einlieferung - interessant ist, was zuletzt
+    geschehen ist, nicht wann gescannt wurde. Die Berechtigungen prüft
+    weiterhin Paperless, es sieht also jeder nur seine eigenen.
+    """
+    await _benutzer(anfrage)
+    grenze = max(5, min(200, page_size))
+    sortierung = ordering if filters.sortierung_gueltig(ordering) else "-created"
+    seite = max(1, min(page, -(-NEUESTE_HOECHSTENS // grenze)))
+    parameter = {
+        "ordering": sortierung,
+        "page": seite,
+        "page_size": grenze,
+    }
+    if q.strip():
+        parameter["title_content"] = q.strip()
+    gewaehlte_tags = filters.tagliste(tag)
+    if gewaehlte_tags:
+        parameter["tags__id__all"] = gewaehlte_tags
+    daten = await _zugang(anfrage).dokumente(parameter)
+    # Die Startseite ist ein Blick auf das Neueste, kein Archivzugang: bei
+    # tausenden Dokumenten wären es hunderte Seiten, durch die niemand
+    # blättert. Wer weiter zurück will, nimmt einen Ordner oder die Suche.
+    anzahl = min(int(daten.get("count") or 0), NEUESTE_HOECHSTENS)
+    treffer = daten.get("results") or []
+    # Die letzte Seite kann über die Grenze hinausragen.
+    zuviel = seite * grenze - anzahl
+    if zuviel > 0:
+        treffer = treffer[:max(0, len(treffer) - zuviel)]
+    return {
+        "count": anzahl,
+        "results": treffer,
+        "page": seite,
+        "pages": max(1, -(-anzahl // grenze)) if anzahl else 0,
+        "ordering": sortierung,
         "tag": gewaehlte_tags,
     }
 

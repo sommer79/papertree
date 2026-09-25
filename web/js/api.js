@@ -48,6 +48,8 @@ export const api = {
   ordnerLoeschen: (id) => ruf('api/baum/' + id, { methode: 'DELETE' }),
   reihenfolge: (eltern_id, ids) =>
     ruf('api/baum/reihenfolge', { methode: 'POST', koerper: { eltern_id, ids } }),
+  dashboardReihenfolge: (ids) =>
+    ruf('api/dashboard/reihenfolge', { methode: 'POST', koerper: { ids } }),
 
   effektiv: (id) => ruf('api/baum/' + id + '/effektiv'),
   anzahl: (id) => ruf('api/baum/' + id + '/anzahl'),
@@ -62,6 +64,7 @@ export const api = {
     ruf('api/vorschau', { methode: 'POST', koerper: { filter, geerbt } }),
   ausLink: (link) => ruf('api/link', { methode: 'POST', koerper: { link } }),
   suche: (params) => ruf('api/suche?' + new URLSearchParams(params)),
+  neueste: (params) => ruf('api/neueste?' + new URLSearchParams(params)),
 
   dokument: (id) => ruf('api/dokumente/' + id),
   notizen: (id) => ruf('api/dokumente/' + id + '/notizen'),

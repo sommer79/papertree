@@ -27,6 +27,7 @@
 
   "dashboard.titel": "Tableau de bord",
   "dashboard.leer": "Aucun dossier sur le tableau de bord. Activez « Afficher sur le tableau de bord PaperTree » dans l'éditeur d'un dossier.",
+  "dashboard.neueste": "Documents les plus récents",
 
   "baum.leer": "Aucun dossier pour l'instant. Créez le premier avec « + Dossier ».",
   "baum.aufklappen": "Déplier",
@@ -48,6 +49,9 @@
   "ordner.unbekannt": "Ce dossier n'existe pas.",
   "ordner.bearbeiten": "Modifier le dossier",
   "ordner.unterordnerNeu": "+ Sous-dossier",
+  "ordner.reiterNeu": "+ Onglet",
+  "ordner.reiterAlle": "Tous les documents",
+  "ordner.reiterBearbeiten": "Modifier l'onglet",
   "ordner.alleDokumente": "tous les documents",
   "ordner.plusAlleUnter": "plus tous les sous-dossiers",
   "ordner.plusDirekteUnter": "plus les sous-dossiers directs",
@@ -72,6 +76,7 @@
   "suche.treffer.other": "{anzahl} résultats",
 
   "liste.spalte.titel": "Titre",
+  "liste.spalte.titelKorrespondent": "Titre / correspondant",
   "liste.spalte.korrespondent": "Correspondant",
   "liste.spalte.typ": "Type",
   "liste.spalte.speicherpfad": "Chemin de stockage",
@@ -89,10 +94,6 @@
   "liste.tagNurDiese": "{name} – n'afficher que celles-ci",
   "liste.tagFilterAus": "{name} – retirer le filtre",
   "liste.inPaperlessDok": "Ouvrir dans Paperless : {titel}",
-  "liste.sortAufAktiv": "Tri croissant – cliquez pour décroissant",
-  "liste.sortAbAktiv": "Tri décroissant – cliquez pour croissant",
-  "liste.sortNach": "Trier par {spalte}",
-  "liste.tagsNichtSortierbar": "Paperless ne sait pas trier par étiquette",
   "liste.sortierung": "Tri",
   "liste.seiteVon": "Page {seite} sur {von}",
   "liste.vorherige": "Page précédente",
@@ -182,6 +183,7 @@
   "editor.sortZusatzfeldAb": "Champ personnalisé : {name}, décroissant",
   "editor.seitengroesse": "Entrées par page",
   "editor.aufDashboard": "Afficher sur le tableau de bord PaperTree",
+  "editor.alsReiter": "Afficher comme onglet dans le dossier parent — ce dossier ne figure alors plus dans l'arborescence",
 
   "gruppierung.keine": "— aucun, sous-dossiers à la main —",
   "gruppierung.jahrErstellt": "Année (création)",
