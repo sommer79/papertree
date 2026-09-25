@@ -10,10 +10,12 @@ Quelldateien verweisen darauf.
 
 *English version: [README.md](README.md).*
 
-![Ein Ordner mit seiner Dokumentliste](docs/bilder/01-ordner.png)
+![Ein Ordner mit seiner Dokumentliste und Reitern](docs/bilder/01-ordner.png)
 
-*Mehr davon: [Screenshots im Wiki](https://github.com/sommer79/papertree/wiki/Screenshots).
-Namen, Korrespondenten und Dokumente auf den Bildern sind erfunden.*
+*Mehr davon: [Screenshots im Wiki](https://github.com/sommer79/papertree/wiki/Screenshots)
+– die Startseite, der Ordner-Editor, die Dokumentansicht und die Einstellungen.
+Namen, Korrespondenten und Dokumente auf den Bildern sind erfunden; die Logos
+sind echt, weil sie zeigen, was die Funktion tut.*
 
 ## Was PaperTree kann
 
