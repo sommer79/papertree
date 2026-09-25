@@ -11,6 +11,11 @@ N1–N6 in the source files refer to it.
 *Deutsche Fassung: [README.de.md](README.de.md). The interface itself speaks
 five languages; the code, comments and command-line flags are German.*
 
+![A folder with its document list](docs/bilder/01-ordner.png)
+
+*More: [screenshots in the wiki](https://github.com/sommer79/papertree/wiki/Screenshots).
+Names, correspondents and documents in the pictures are invented.*
+
 ## What PaperTree does
 
 - A folder tree, nested as deep as you like, with two switches per folder —

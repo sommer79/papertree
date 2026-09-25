@@ -10,6 +10,11 @@ Quelldateien verweisen darauf.
 
 *English version: [README.md](README.md).*
 
+![Ein Ordner mit seiner Dokumentliste](docs/bilder/01-ordner.png)
+
+*Mehr davon: [Screenshots im Wiki](https://github.com/sommer79/papertree/wiki/Screenshots).
+Namen, Korrespondenten und Dokumente auf den Bildern sind erfunden.*
+
 ## Was PaperTree kann
 
 - Ordnerbaum, beliebig tief, mit den zwei Schaltern **eigener Filter** und
