@@ -305,6 +305,11 @@ a:hover { text-decoration: underline; }
    Fliesstext – sie begleiten den Titel, statt mit ihm zu wetteifern. */
 .knopf.werkzeugknopf { font-size: 13.5px; gap: 7px; }
 .knopf.werkzeugknopf svg { flex: none; opacity: .75; }
+/* Die Zeichen sitzen rechnerisch mittig und wirken trotzdem zu tief: ein
+   Ordner hat unten eine geschlossene Kante und oben nur die halbe Lasche,
+   sein optischer Schwerpunkt liegt also unter dem geometrischen. Ein Pixel
+   höher, dann steht es auf einer Linie mit den Grossbuchstaben. */
+.knopf.werkzeugknopf svg, .brotkrumen svg { transform: translateY(-1px); }
 
 /* Reiter innerhalb eines Ordners: Unterordner, die hier oben erscheinen
    statt im Baum. Der erste Reiter ist der Ordner selbst. */
